@@ -38,7 +38,7 @@ public class Evaluation {
      * Démarre l'évaluation de la méthode
      * @param nbIter nombre d'itération sur lesquelles vont être effectuées l'évaluation
      */
-    public void evaluer(int nbIter){
+    public void evaluer(int nbIter) throws IOException {
         lectureFichier();
         MRU = new float[nbIter][n+1];
         for(int i=0; i<nbIter; i++){
@@ -234,7 +234,7 @@ public class Evaluation {
     /**
      * Lance l'éxécution du programme utilisant le solveur
      */
-    private void runSolver(){
+    private void runSolver() throws IOException {
         solver.createSolverFile();
         solver.run();
         try {
