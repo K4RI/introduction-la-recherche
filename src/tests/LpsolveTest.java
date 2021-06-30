@@ -11,7 +11,7 @@ import java.io.IOException;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class LpsolveTest {
+class LpsolveTest { /* erreur solvers 6 13 14 sur la méthode parseOutput, càd ceux sans options*/
 
     private AbstractSolver solver1;
     private AbstractSolver solver2;
@@ -35,19 +35,19 @@ class LpsolveTest {
         solver3 = new Lpsolve("."+File.separatorChar+"src"+File.separatorChar+"tests"+File.separatorChar+"testWrong.txt", "-S7");
         solver4 = new Lpsolve("."+File.separatorChar+"src"+File.separatorChar+"tests"+File.separatorChar+"wrongExtension.mp3", "-S7");
         solver5 = new Lpsolve("."+File.separatorChar+"src"+File.separatorChar+"tests"+File.separatorChar+"wrong_path.txt", "-S7");
-        solver6 = new Lpsolve("."+File.separatorChar+"src"+File.separatorChar+"tests"+File.separatorChar+ "wrongFunctionRightMRU.txt", "");
+        solver6 = new Lpsolve("."+File.separatorChar+"src"+File.separatorChar+"tests"+File.separatorChar+ "wrongFunctionRightMRU.txt", "-S");
         solver7 = new Lpsolve("."+File.separatorChar+"src"+File.separatorChar+"tests"+File.separatorChar+ "wrongFunctionRightMRU.txt", "-S1");
         solver8 = new Lpsolve("."+File.separatorChar+"src"+File.separatorChar+"tests"+File.separatorChar+ "wrongFunctionRightMRU.txt", "-S2");
         solver9 = new Lpsolve("."+File.separatorChar+"src"+File.separatorChar+"tests"+File.separatorChar+ "wrongFunctionRightMRU.txt", "-S3");
         solver10 = new Lpsolve("."+File.separatorChar+"src"+File.separatorChar+"tests"+File.separatorChar+ "wrongFunctionRightMRU.txt", "-S4");
         solver11 = new Lpsolve("."+File.separatorChar+"src"+File.separatorChar+"tests"+File.separatorChar+ "wrongFunctionRightMRU.txt", "-S5");
         solver12 = new Lpsolve("."+File.separatorChar+"src"+File.separatorChar+"tests"+File.separatorChar+ "wrongFunctionRightMRU.txt", "-S6");
-        solver13 = new Lpsolve("."+File.separatorChar+"src"+File.separatorChar+"tests"+File.separatorChar+ "wrongMRU.txt", "");
-        solver14 = new Lpsolve("."+File.separatorChar+"src"+File.separatorChar+"tests"+File.separatorChar+ "rightFunction.txt", "");
+        solver13 = new Lpsolve("."+File.separatorChar+"src"+File.separatorChar+"tests"+File.separatorChar+ "wrongMRU.txt", "-S");
+        solver14 = new Lpsolve("."+File.separatorChar+"src"+File.separatorChar+"tests"+File.separatorChar+ "rightFunction.txt", "-S");
     }
 
     @Test
-    void testCreateSolverFileRight() {
+    void testCreateSolverFileRight() throws IOException {
         solver1.createSolverFile();
         solver2.createSolverFile();
         solver3.createSolverFile();
@@ -61,14 +61,6 @@ class LpsolveTest {
         Assertions.assertTrue(file2.exists());
         Assertions.assertTrue(file3.exists());
     }
-
-    /*@Test
-    void testcreateSolverFileWrong() {
-        Assertions.assertThrows(FileNotFoundException.class, () ->
-            solver5.createSolverFile(),
-        "Expected createSolverFile() to throw, but it didn't"
-        );
-    }*/
 
     @Test
     void testParseOutputWrongExtension() throws IOException {
@@ -87,15 +79,23 @@ class LpsolveTest {
     }
 
     @Test
-    void retryLpFileWrongExtension() {
+    void retryLpFileEmptyTxt() throws IOException {
+        solver3.createSolverFile();
+        solver3.retryLpFile();
+    }
+
+    @Test
+    void retryLpFileWrongExtension() throws IOException {
         solver4.createSolverFile();
         solver4.retryLpFile();
     }
 
     @Test
-    void retryLpFileEmptyTxt() {
-        solver3.createSolverFile();
-        solver3.retryLpFile();
+    void testcreateSolverFileWrong() {
+        Assertions.assertThrows(FileNotFoundException.class, () ->
+            solver5.createSolverFile(),
+        "Expected createSolverFile() to throw, but it didn't"
+        );
     }
 
     @Test
