@@ -1,6 +1,7 @@
 package solver;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Scanner;
@@ -15,83 +16,78 @@ public class Lpsolve extends AbstractSolver {
     public Lpsolve(String filePath, String options) {
         super(filePath, options);
         extension = ".lp";
-        this.solver = getClass().getClassLoader().getResource("programmes/lp_solve.exe").getPath();
+        this.solver = getClass().getClassLoader().getResource("ressources/programmes/lp_solve.exe").getPath();
         solverFile = "output"+File.separatorChar+"user_solution.lp";
     }
 
     /**
      * Méthode permettant de créer un fichier lp depuis un fichier texte
      */
-    public void createSolverFile() {
-        try {
-            FileWriter myWriter = new FileWriter(solverFile);
-            File file = new File(filePath);
-            Scanner myReader = new Scanner(file);
-            int cpt = 1;
+    public void createSolverFile() throws IOException {
+        FileWriter myWriter = new FileWriter(solverFile);
+        File file = new File(filePath);
+        Scanner myReader = new Scanner(file);
+        int cpt = 1;
 
-            // On créé un fichier lp grâce aux informations du fichier texte
-            while(myReader.hasNext()){
-                String data = myReader.nextLine();
-                // On regarde si on minimise ou maximis ela fonction de coût
-                if (data.equals("min")){
-                    myWriter.write("min: ");
-                }else if (data.equals("max")){
-                    myWriter.write("max: ");
+        // On créé un fichier lp grâce aux informations du fichier texte
+        while(myReader.hasNext()){
+            String data = myReader.nextLine();
+            // On regarde si on minimise ou maximis ela fonction de coût
+            if (data.equals("min")){
+                myWriter.write("min: ");
+            }else if (data.equals("max")){
+                myWriter.write("max: ");
+            }
+
+            // On regarde si la ligne correspond à la fonction
+            if (data.equals("// fonction")){
+                data = myReader.nextLine();
+                String[] dataTab = data.split(" ");
+                nbVariables = dataTab.length;
+                int i = 0;
+
+                // On écrit la fonction
+                for (String s : dataTab) {
+                    myWriter.write("x"+(i+1));
+                    if (i < dataTab.length-1){
+                        myWriter.write(" + ");
+                    }
+                    i++;
                 }
-
-                // On regarde si la ligne correspond à la fonction
-                if (data.equals("// fonction")){
-                    data = myReader.nextLine();
-                    String[] dataTab = data.split(" ");
-                    nbVariables = dataTab.length;
-                    int i = 0;
-
-                    // On écrit la fonction
-                    for (String s : dataTab) {
-                        myWriter.write("x"+(i+1));
-                        if (i < dataTab.length-1){
-                            myWriter.write(" + ");
-                        }
-                        i++;
-                    }
-                    myWriter.write(";\n");
-                    for (i = 0; i < nbVariables; i++){
-                        myWriter.write("c"+cpt+": "+"x"+cpt+" = "+dataTab[i]+";\n");
-                        cpt++;
-                    }
-                }
-
-
-
-                // On vérifie les contraintes
-                if (data.matches("\\/\\/ c[0-9]*.*")){
-                    myWriter.write("c"+cpt+": ");
-
-                    String inequality = choseInequality(data);
-
-                    data = myReader.nextLine();
-                    String[] dataTab = data.split(" ");
-                    int i = 0;
-                    // On écrit la fonction
-                    for (String s : dataTab) {
-                        myWriter.write(s);
-                        if (i < dataTab.length-2){
-                            myWriter.write(" + ");
-                        }else if (i < dataTab.length-1){
-                            myWriter.write(" "+inequality+" ");
-                        }
-                        i++;
-                    }
+                myWriter.write(";\n");
+                for (i = 0; i < nbVariables; i++){
+                    myWriter.write("c"+cpt+": "+"x"+cpt+" = "+dataTab[i]+";\n");
                     cpt++;
-                    myWriter.write(";\n");
                 }
             }
 
-            myWriter.close();
-        } catch (IOException e) {
-            System.out.println("An error occurred.");
-            e.printStackTrace();
+
+
+            // On vérifie les contraintes
+            if (data.matches("\\/\\/ c[0-9]*.*")){
+                myWriter.write("c"+cpt+": ");
+
+                String inequality = choseInequality(data);
+
+                data = myReader.nextLine();
+                String[] dataTab = data.split(" ");
+                int i = 0;
+                // On écrit la fonction
+                for (String s : dataTab) {
+                    myWriter.write(s);
+                    if (i < dataTab.length-2){
+                        myWriter.write(" + ");
+                    }else if (i < dataTab.length-1){
+                        myWriter.write(" "+inequality+" ");
+                    }
+                    i++;
+                }
+                cpt++;
+                myWriter.write(";\n");
+            }
         }
+
+        myWriter.close();
     }
 
     /**

@@ -97,7 +97,7 @@ public abstract class AbstractSolver {
     /**
      * Méthode permettant de créer un fichier lp depuis un fichier texte
      */
-    public abstract void createSolverFile();
+    public abstract void createSolverFile() throws IOException;
 
     public String getFilePath() {
         return filePath;
