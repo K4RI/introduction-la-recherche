@@ -11,7 +11,7 @@ import java.io.IOException;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class LpsolveTest { /* erreur solvers 6 13 14 sur la méthode parseOutput, càd ceux sans options*/
+class LpsolveTest {
 
     private AbstractSolver solver1;
     private AbstractSolver solver2;
