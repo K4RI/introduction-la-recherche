@@ -1,8 +1,8 @@
 min
 // fonction
-2 2
+5 2
 // c1 sup
-x1 1
+2x1 3x2 1
 // c2 inf
 x1 3
 // c3 sup

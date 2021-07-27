@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.net.URL;
 import java.util.Scanner;
 
 public class Lpsolve extends AbstractSolver {
@@ -17,6 +18,11 @@ public class Lpsolve extends AbstractSolver {
         super(filePath, options);
         extension = ".lp";
         this.solver = getClass().getClassLoader().getResource("ressources/programmes/lp_solve.exe").getPath();
+        /*URL e;
+        e = getClass().getClassLoader().getResource("ressources/programmes/lp_solve.exe");
+        System.out.println(e); // "file:/C/Users/.../lp_solve.exe"
+        this.solver = e.getPath();
+        System.out.println(this.solver); // "/C/Users/.../lp_solve.exe" */
         solverFile = "output"+File.separatorChar+"user_solution.lp";
     }
 
@@ -112,7 +118,7 @@ public class Lpsolve extends AbstractSolver {
                 setStatutUnbounded();
                 unbounded = true;
             } else if (s.matches(".*objective.*")) {
-                setStatutRight();
+                    setStatutRight();
                 // On sépare les mots de la ligne
                 String[] objectiveLine = s.split(" ");
                 //On récupère la solution optimale du problème
