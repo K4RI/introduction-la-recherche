@@ -1,9 +1,7 @@
 package solverAPI;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStreamReader;
 
 import lpsolve.*;
 
@@ -13,35 +11,32 @@ public abstract class AbstractSolverAPI {
     protected LpSolve newlpSolver;
     protected LpSolve newnewlpSolver;
     protected final String filePath;
+    protected final int options;
     protected String solverFile;
     protected final String newSolverFile;
-    protected final int options;
+    protected String extension;
     protected String solver;
-    protected String output;
     protected int nbVariables;
     protected int nbContraintes;
-    protected String extension;
     protected static double epsilon;
     protected double valOptimal;
     protected double[] nouvelleFctCout;
-    protected int statut;
-    protected int newStatut;
-    protected int newnewStatut;
+    protected int solvecode;
+    protected String statut;
 
     /**
      * Constructeur général de solveur de programme linéaire
      * @param filePath chemin du fichier
      * @param options options du solveur
      */
-    public AbstractSolverAPI(String filePath, int options) throws LpSolveException {
+    public AbstractSolverAPI(String filePath, int options){
         this.filePath = filePath;
         this.options = options;
-        this.solverFile = "";
+        this.solverFile = "output"+File.separatorChar+"user_solution";
         this.newSolverFile = "output"+File.separatorChar+"final_result";
-        File outputRes = new File("output");
         epsilon = 0.001;
+        File outputRes = new File("output");
         outputRes.mkdir();
-        System.out.println(filePath);
     }
 
     /**
@@ -49,21 +44,7 @@ public abstract class AbstractSolverAPI {
      * @throws LpSolveException en cas d'erreur avec le package
      */
     public void run() throws LpSolveException {
-        statut = lpSolver.solve();
-        // System.out.println("STATUT: " + statut);
-    }
-
-
-    public void setStatutInfeasible() {
-        this.statut = 2;
-    }
-
-    public void setStatutUnbounded() {
-        this.statut = 3;
-    }
-
-    public void setStatutRight() {
-        this.statut = 0;
+        solvecode = lpSolver.solve();
     }
 
     /**
@@ -80,13 +61,9 @@ public abstract class AbstractSolverAPI {
         return filePath;
     }
 
-    public String getSolverFile() {
-        return solverFile;
-    }
+    public String getSolverFile() { return solverFile+extension; }
 
-    public String getNewSolverFile() {
-        return newSolverFile+extension;
-    }
+    public String getNewSolverFile() { return newSolverFile+extension; }
 
     public int getOptions() {
         return options;
@@ -94,10 +71,6 @@ public abstract class AbstractSolverAPI {
 
     public String getSolver() {
         return solver;
-    }
-
-    public String getOutput() {
-        return output;
     }
 
     public int getNbVariables() {
@@ -114,7 +87,7 @@ public abstract class AbstractSolverAPI {
         return nouvelleFctCout;
     }
 
-    public int getStatut() {
+    public String getStatut() {
         return statut;
     }
 }

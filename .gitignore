@@ -29,6 +29,7 @@ hs_err_pid*
 *.iml
 *.out
 
+/out/
 /output/
 /.idea/
 /lib/
@@ -36,9 +37,3 @@ hs_err_pid*
 /WriteLp.txt
 /writeParams.txt
 /model.lp
-/erreur_NullPointerException.PNG
-/erreur_JNI_version.PNG
-/erreur_JNI_findclass.PNG
-/lp_solve_5.5.2.11_dev_win64.zip
-/lp_solve_5.5.2.11_java.zip
-/out/
