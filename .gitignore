@@ -18,9 +18,27 @@
 *.zip
 *.tar.gz
 *.rar
+*.PNG
+*.png
+*.dll
+
 
 # virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
 hs_err_pid*
 
 *.iml
 *.out
+
+/output/
+/.idea/
+/lib/
+/writeBase.txt
+/WriteLp.txt
+/writeParams.txt
+/model.lp
+/erreur_NullPointerException.PNG
+/erreur_JNI_version.PNG
+/erreur_JNI_findclass.PNG
+/lp_solve_5.5.2.11_dev_win64.zip
+/lp_solve_5.5.2.11_java.zip
+/out/

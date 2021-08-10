@@ -108,6 +108,7 @@ public class Lpsolve extends AbstractSolver {
         boolean infeasible = false, unbounded = false, right = false;
         // On sépare les lignes du fichier en tableau de String
         String[] lpOutput = output.split("\n");
+        System.out.println("---" + output + "---");
 
         for (String s : lpOutput) {
             // Le problème n'est pas faisable (la solution n'est pas réalisable ou MRU est incohérent)
