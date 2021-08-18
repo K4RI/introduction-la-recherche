@@ -30,7 +30,6 @@ hs_err_pid*
 *.out
 
 /out/
-/output/
 /.idea/
 /lib/
 /writeBase.txt

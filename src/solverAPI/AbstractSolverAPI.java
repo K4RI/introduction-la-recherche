@@ -12,8 +12,11 @@ public abstract class AbstractSolverAPI {
     protected LpSolve lpSolverTer;
     protected final String filePath;
     protected final int options;
-    protected String solverFile;
-    protected final String newSolverFile;
+    protected String solverFile; // configuration initiale
+    protected final String newSolverFile; // configuration finale
+    protected final String cohSolverFile; // problème intermédiaire (2.1)
+    protected final String incohSolverFile1; // problème intermédiaire (2.2 non-réduit)
+    protected final String incohSolverFile2; // problème intermédiaire (2.2 réduit)
     protected String extension;
     protected String solver;
     protected int nbVariables;
@@ -34,6 +37,9 @@ public abstract class AbstractSolverAPI {
         this.options = options;
         this.solverFile = "output"+File.separatorChar+"initial_solutionAPI";
         this.newSolverFile = "output"+File.separatorChar+"final_resultAPI";
+        this.cohSolverFile = "output"+File.separatorChar+"coh_solverAPI";
+        this.incohSolverFile1 = "output"+File.separatorChar+"incoh_solver1API";
+        this.incohSolverFile2 = "output"+File.separatorChar+"incoh_solver2API";
         epsilon = 0.001;
         File outputRes = new File("output");
         outputRes.mkdir();
@@ -64,6 +70,12 @@ public abstract class AbstractSolverAPI {
     public String getSolverFile() { return solverFile+extension; }
 
     public String getNewSolverFile() { return newSolverFile+extension; }
+
+    public String getCohSolverFile() { return cohSolverFile+extension; }
+
+    public String getIncohSolverFile1() { return incohSolverFile1+extension; }
+
+    public String getIncohSolverFile2() { return incohSolverFile2+extension; }
 
     public int getOptions() {
         return options;

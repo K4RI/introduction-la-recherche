@@ -104,9 +104,12 @@ public class LpsolveAPI extends AbstractSolverAPI {
         // on ajoute les variables zi
         for (int i = 1; i <= getNbVariables(); i++) {
             lpSolverTer.addColumn(new double[getNbContraintes()]);
+            lpSolverTer.setColName(i, "y"+i);
+            lpSolverTer.setColName(getNbVariables() + i, "z"+i);
         }
 
         // on ajoute les contraintes -yi+zi>=-xi et yi+zi>=xi
+        // càd zi >= |yi-xi| = diff absolue entre ancien et nouveau coût
         for (int i = 1; i <= getNbVariables(); i++) {
             double xi = lpSolver.getUpbo(i);
             lpSolverTer.addConstraint(new double[2*getNbVariables()], LpSolve.GE, -xi);
@@ -128,6 +131,7 @@ public class LpsolveAPI extends AbstractSolverAPI {
         nouvelleFctCout = Arrays.copyOfRange(lpSolverTer.getPtrVariables(), 0, getNbVariables());
         printNewCout();
         lpSolverTer.printLp();
+        lpSolverTer.writeLp(getCohSolverFile());
         updateFunction();
         lpSolver.printLp();
         valOptimal=lpSolverTer.getObjective();
@@ -143,6 +147,7 @@ public class LpsolveAPI extends AbstractSolverAPI {
 
         // à chaque contrainte on ajoute une même déviation b, qu'on cherche alors à minimiser
         newMRU.addColumn(new double[getNbContraintes()]);
+        newMRU.setColName(getNbVariables() + 1, "b");
         for (int i = 1; i <= getNbContraintes(); i++) {
             if (newMRU.getConstrType(i) == LpSolve.LE) {
                 newMRU.setMat(i, getNbVariables() + 1, -1);
@@ -156,6 +161,7 @@ public class LpsolveAPI extends AbstractSolverAPI {
         newMRU.setMat(0, getNbVariables() + 1, 1);
 
         newMRU.printLp();
+        newMRU.writeLp(getIncohSolverFile1());
         newMRU.solve();
         //System.out.println(Arrays.toString(newMRU.getPtrVariables()));
 
@@ -176,6 +182,7 @@ public class LpsolveAPI extends AbstractSolverAPI {
             newMRU.solve();
         }
         newMRU.printLp();
+        newMRU.writeLp(getIncohSolverFile2());
 
         // une fois réglé le problème du MRU, on reprend du début (cas 1 ou 2.1)
         parseOutput();
