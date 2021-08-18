@@ -1,4 +1,4 @@
-import evaluation.Evaluation;
+import evaluationAPI.EvaluationAPI;
 import lpsolve.LpSolveException;
 import solverAPI.AbstractSolverAPI;
 import solverAPI.LpsolveAPI;
@@ -9,7 +9,15 @@ import java.io.IOException;
 public class MainAPI {
 
     public static void main(String[] args) throws IOException, LpSolveException {
-        // récupération du fichier texte
+
+        // On lance la partie évaluation
+        // Ici 2 règles et 5 itérations
+        if(args.length <= 1) {
+            EvaluationAPI e = new EvaluationAPI(2);
+            e.evaluer(5);
+        }
+
+        // récupération du fichier lp
         String filePath = args[0];
         // option par défaut si aucune option n'est précisée
         int options = 0;

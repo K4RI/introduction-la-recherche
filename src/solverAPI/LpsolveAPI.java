@@ -1,9 +1,9 @@
 package solverAPI;
 
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Objects;
 
 import lpsolve.*;
 
@@ -14,10 +14,15 @@ public class LpsolveAPI extends AbstractSolverAPI {
      * @param filePath chemin du fichier
      * @param options  options du solveur
      */
-    public LpsolveAPI(String filePath, int options) throws LpSolveException {
+    public LpsolveAPI(String filePath, int options) {
         super(filePath, options);
         extension = ".lp";
-        this.solverFile = "output"+File.separatorChar+"user_solution";
+    }
+
+    /**
+     * Méthode permettant d'initialiser l'objet LpSolve à partir du fichier .lp
+     */
+    public void createSolverFile() throws IOException, LpSolveException {
         this.lpSolver = LpSolve.readLp(filePath, options, "Problème");
         this.nbVariables = lpSolver.getNcolumns();
         this.nbContraintes = lpSolver.getNrows();
@@ -27,12 +32,7 @@ public class LpsolveAPI extends AbstractSolverAPI {
             } else {
                 lpSolver.setRh(i, lpSolver.getRh(i)+epsilon);}
         }
-    }
 
-    /**
-     * Méthode permettant d'initialiser l'objet LpSolve à partir du fichier .lp
-     */
-    public void createSolverFile() throws IOException, LpSolveException {
         lpSolver.writeLp(getSolverFile());
     }
 
@@ -43,8 +43,12 @@ public class LpsolveAPI extends AbstractSolverAPI {
         valOptimal = lpSolver.getObjective();
 
         if (solvecode==0){
+            lpSolver.printLp();
             System.out.println("La solution est dans MRU (cas 1)");
-            statut="right";
+            if (!Objects.equals(statut, "inf_incoh")) {
+                statut="right";
+            }
+
         } else if(solvecode==2){
             System.out.println("Le problème est infaisable (cas 2)");
             retryLpFile();
@@ -55,21 +59,26 @@ public class LpsolveAPI extends AbstractSolverAPI {
             System.out.println("Code inconnu : " + solvecode);
             statut=Integer.toString(solvecode);
         }
+
+        // fin de l'exécution
+        lpSolver.writeLp(getNewSolverFile());
     }
 
     /**
      * Méthode qui détermine si le problème d'infaisabilité vient de la fonction de coût ou de la cohérence de MRU
      */
     public void retryLpFile() throws LpSolveException {
-        newlpSolver= lpSolver.copyLp();
-        newlpSolver.setLpName("Problème 2");
+        lpSolverBis= lpSolver.copyLp();
+        lpSolverBis.setLpName("Problème 2");
         // on retire la fonction de coût, pour ne garder que les contraintes et vérifier leur cohérence
-        emptyBounds(newlpSolver);
-        int newStatut = newlpSolver.solve();
+        emptyBounds(lpSolverBis);
+        int newStatut = lpSolverBis.solve();
 
         if(newStatut==0){
             System.out.println("MRU cohérent (cas 2.1)");
-            statut="inf_coh";
+            if (!Objects.equals(statut, "inf_incoh")) {
+                statut="inf_coh";
+            }
             findShortestDistance();
         } else if (newStatut==2) {
             System.out.println("MRU incohérent (cas 2.2)");
@@ -88,24 +97,24 @@ public class LpsolveAPI extends AbstractSolverAPI {
      * Méthode permettant de retrouver la plus petite distance entre une fonction de coût et MRU (cas 2.1)
      */
     private void findShortestDistance() throws LpSolveException {
-        newnewlpSolver = lpSolver.copyLp();
-        newnewlpSolver.setLpName("Problème 2.1");
-        emptyBounds(newnewlpSolver);
+        lpSolverTer = lpSolver.copyLp();
+        lpSolverTer.setLpName("Problème 2.1");
+        emptyBounds(lpSolverTer);
 
         // on ajoute les variables zi
         for (int i = 1; i <= getNbVariables(); i++) {
-            newnewlpSolver.addColumn(new double[getNbContraintes()]);
+            lpSolverTer.addColumn(new double[getNbContraintes()]);
         }
 
         // on ajoute les contraintes -yi+zi>=-xi et yi+zi>=xi
         for (int i = 1; i <= getNbVariables(); i++) {
             double xi = lpSolver.getUpbo(i);
-            newnewlpSolver.addConstraint(new double[2*getNbVariables()], LpSolve.GE, -xi);
-            newnewlpSolver.setMat(newnewlpSolver.getNrows(), i, -1);
-            newnewlpSolver.setMat(newnewlpSolver.getNrows(), i+getNbVariables(), 1);
-            newnewlpSolver.addConstraint(new double[2*getNbVariables()], LpSolve.GE, xi);
-            newnewlpSolver.setMat(newnewlpSolver.getNrows(), i, 1);
-            newnewlpSolver.setMat(newnewlpSolver.getNrows(), i+getNbVariables(), 1);
+            lpSolverTer.addConstraint(new double[2*getNbVariables()], LpSolve.GE, -xi);
+            lpSolverTer.setMat(lpSolverTer.getNrows(), i, -1);
+            lpSolverTer.setMat(lpSolverTer.getNrows(), i+getNbVariables(), 1);
+            lpSolverTer.addConstraint(new double[2*getNbVariables()], LpSolve.GE, xi);
+            lpSolverTer.setMat(lpSolverTer.getNrows(), i, 1);
+            lpSolverTer.setMat(lpSolverTer.getNrows(), i+getNbVariables(), 1);
         }
 
         // on modifie la fonction objectif en somme des zi
@@ -113,14 +122,15 @@ public class LpsolveAPI extends AbstractSolverAPI {
         for (int i = getNbVariables()+1; i <= 2*getNbVariables(); i++) {
             fctObj[i]=1;
         }
-        newnewlpSolver.setObjFn(fctObj);
-        newnewlpSolver.solve();
+        lpSolverTer.setObjFn(fctObj);
+        lpSolverTer.solve();
 
-        nouvelleFctCout = Arrays.copyOfRange(newnewlpSolver.getPtrVariables(), 0, getNbVariables());
-        for (int i = 0; i < getNbVariables(); i++) {
-            System.out.println("Nouvelle valeur de x" + (i+1) + " = " + nouvelleFctCout[i]);
-        }
-        newnewlpSolver.writeLp(getNewSolverFile());
+        nouvelleFctCout = Arrays.copyOfRange(lpSolverTer.getPtrVariables(), 0, getNbVariables());
+        printNewCout();
+        lpSolverTer.printLp();
+        updateFunction();
+        lpSolver.printLp();
+        valOptimal=lpSolverTer.getObjective();
     }
 
     /**
@@ -130,6 +140,8 @@ public class LpsolveAPI extends AbstractSolverAPI {
         LpSolve newMRU = lpSolver.copyLp();
         newMRU.setLpName("Problème 2.2");
         emptyBounds(newMRU);
+
+        // à chaque contrainte on ajoute une même déviation b, qu'on cherche alors à minimiser
         newMRU.addColumn(new double[getNbContraintes()]);
         for (int i = 1; i <= getNbContraintes(); i++) {
             if (newMRU.getConstrType(i) == LpSolve.LE) {
@@ -143,19 +155,49 @@ public class LpsolveAPI extends AbstractSolverAPI {
         }
         newMRU.setMat(0, getNbVariables() + 1, 1);
 
-        double b = 1;
-        /* while (b != 0) {
+        newMRU.printLp();
+        newMRU.solve();
+        //System.out.println(Arrays.toString(newMRU.getPtrVariables()));
+
+        double[] constrs;
+        while (newMRU.getObjective() != 0) {
+            // on recherche la première contrainte active (="saturée")
+            constrs = newMRU.getPtrConstraints();
+            int i=1;
+            while (constrs[i-1] != newMRU.getRh(i)){
+                //System.out.println("valeur atteinte : " + constrs[i-1] + " / seuil : " + newMRU.getRh(i));
+                i+=1;
+            }
+            // on la supprime puis on relance
+            System.out.println("Contrainte supprimée :" + i);
+            lpSolver.delConstraint(i);
+            newMRU.delConstraint(i);
+            nbContraintes--;
             newMRU.solve();
-            // déterminer les contraintes saturées
-            newMRU.delConstraint(...)
         }
-        newMRU.printLp(); */
+        newMRU.printLp();
+
+        // une fois réglé le problème du MRU, on reprend du début (cas 1 ou 2.1)
+        parseOutput();
+
     }
 
-
+    /**
+     * Méthode permettant de réinitialiser à 0 Inf les bornes de toutes les variables
+     */
     private void emptyBounds(LpSolve s) throws LpSolveException {
         for (int i = 1; i <= s.getNcolumns(); i++) {
             s.setBounds(i, 0, s.getInfinite());
+        }
+    }
+
+    /**
+     * Méthode permettant de mettre à jour l'objet Lpsolve à partir de la fonction de coût
+     */
+    private void updateFunction() throws LpSolveException {
+        emptyBounds(lpSolver);
+        for (int i = 0; i < getNbVariables(); i++) {
+            lpSolver.setBounds(i+1, nouvelleFctCout[i], nouvelleFctCout[i]);
         }
     }
 }

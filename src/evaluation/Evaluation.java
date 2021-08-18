@@ -31,7 +31,7 @@ public class Evaluation {
         y = new float[n];
         x = new float[n];
         this.n = n;
-        solver = new Lpsolve(evalFile, "");
+        solver = new Lpsolve(evalFile, "-S");
     }
 
     /**
@@ -111,9 +111,9 @@ public class Evaluation {
             //On génère une fonction de coût aléatoire
             for (int i = 0; i < n; i++) {
                 y[i] = r.nextFloat()* (maxValue + 1);
-                System.out.print(y[i]+" ");
+                //System.out.print(y[i]+" ");
             }
-            System.out.println();
+            //System.out.println();
 
             //On vérifie que la fonction de coût générée satisfait toute les contraintes
             for(int i = 0; i<nbContraintes && correct; i++){
@@ -122,13 +122,16 @@ public class Evaluation {
                     res =+ y[j]*MRU[i][j];
                     if(res > MRU[i][n]){
                         correct = false;
-                        System.out.println("Ne convient pas avec contrainte "+i);
+                        //System.out.println("Ne convient pas avec contrainte "+i);
                     }
                 }
             }
             cpt++;
         }
         System.out.println("Coût aléatoire généré au bout de "+cpt+" essais");
+        for (int i = 0; i < n; i++) {
+            System.out.print(y[i]+" ");
+        }
     }
 
     /**

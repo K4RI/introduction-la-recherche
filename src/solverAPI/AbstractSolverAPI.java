@@ -8,8 +8,8 @@ import lpsolve.*;
 public abstract class AbstractSolverAPI {
 
     protected LpSolve lpSolver;
-    protected LpSolve newlpSolver;
-    protected LpSolve newnewlpSolver;
+    protected LpSolve lpSolverBis;
+    protected LpSolve lpSolverTer;
     protected final String filePath;
     protected final int options;
     protected String solverFile;
@@ -32,8 +32,8 @@ public abstract class AbstractSolverAPI {
     public AbstractSolverAPI(String filePath, int options){
         this.filePath = filePath;
         this.options = options;
-        this.solverFile = "output"+File.separatorChar+"user_solution";
-        this.newSolverFile = "output"+File.separatorChar+"final_result";
+        this.solverFile = "output"+File.separatorChar+"initial_solutionAPI";
+        this.newSolverFile = "output"+File.separatorChar+"final_resultAPI";
         epsilon = 0.001;
         File outputRes = new File("output");
         outputRes.mkdir();
@@ -89,5 +89,11 @@ public abstract class AbstractSolverAPI {
 
     public String getStatut() {
         return statut;
+    }
+
+    public void printNewCout(){
+        for (int i = 0; i < getNbVariables(); i++) {
+            System.out.println("Nouvelle valeur de x" + (i+1) + " = " + nouvelleFctCout[i]);
+        }
     }
 }

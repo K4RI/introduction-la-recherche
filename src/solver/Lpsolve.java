@@ -108,7 +108,6 @@ public class Lpsolve extends AbstractSolver {
         boolean infeasible = false, unbounded = false, right = false;
         // On sépare les lignes du fichier en tableau de String
         String[] lpOutput = output.split("\n");
-        System.out.println("---" + output + "---");
 
         for (String s : lpOutput) {
             // Le problème n'est pas faisable (la solution n'est pas réalisable ou MRU est incohérent)
@@ -123,6 +122,7 @@ public class Lpsolve extends AbstractSolver {
                 // On sépare les mots de la ligne
                 String[] objectiveLine = s.split(" ");
                 //On récupère la solution optimale du problème
+                System.out.println(s);
                 valOptimal = Float.parseFloat(objectiveLine[objectiveLine.length-1]);
                 right = true;
             } else if (s.matches("^y.*")) {
