@@ -1,8 +1,8 @@
-/* Problème 2.2 */
+/* Problème 2.2 FINAL */
 
 /* Objective function */
 min: +b;
 
 /* Constraints */
-c2: +x1 -b <= 2.999;
-c4: +x2 -b <= 2.999;
+c3: +x1 -b <= 2.999;
+c5: +x2 -b <= 2.999;

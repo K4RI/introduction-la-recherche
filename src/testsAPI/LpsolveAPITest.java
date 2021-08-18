@@ -69,11 +69,14 @@ class LpsolveAPITest {
     @Test
     void testWrongMRU() throws IOException, LpSolveException {
         solver3.createSolverFile();
+        Assertions.assertEquals(solver3.getNbContraintes(), 5);
         solver3.run();
         solver3.parseOutput();
+        Assertions.assertEquals(solver3.getNbContraintes(), 2);
 
         Assertions.assertEquals(solver3.getStatut(), "inf_incoh");
-        Assertions.assertEquals(solver3.getNbContraintes(), 2);
+        double[] res = new double[] {2.999, 2};
+        Assertions.assertArrayEquals(solver3.getNouvelleFctCout(), res);
     }
 
     @Test
