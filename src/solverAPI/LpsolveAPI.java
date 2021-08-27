@@ -44,16 +44,16 @@ public class LpsolveAPI extends AbstractSolverAPI {
 
         if (solvecode==0){
             lpSolver.printLp();
-            System.out.println("La solution est dans MRU (cas 1)");
+            System.out.println("\nLa solution est dans MRU (cas 1)");
             if (!Objects.equals(statut, "inf_incoh")) {
                 statut="right";
             }
 
         } else if(solvecode==2){
-            System.out.println("Le problème est infaisable (cas 2)");
+            System.out.println("\nLe problème est infaisable (cas 2)");
             retryLpFile();
         } else if (solvecode==3) {
-            System.out.println("Le problème n'est pas borné");
+            System.out.println("\nLe problème n'est pas borné");
             statut="unbounded";
         } else {
             System.out.println("Code inconnu : " + solvecode);
@@ -97,6 +97,10 @@ public class LpsolveAPI extends AbstractSolverAPI {
      * Méthode permettant de retrouver la plus petite distance entre une fonction de coût et MRU (cas 2.1)
      */
     private void findShortestDistance() throws LpSolveException {
+        for (int i = 1; i <= getNbVariables(); i++) {
+            System.out.println("Valeur initiale de x" + (i) + " = " + lpSolver.getLowbo(i));
+        }
+
         lpSolverTer = lpSolver.copyLp();
         lpSolverTer.setLpName("Problème 2.1");
         emptyBounds(lpSolverTer);
@@ -128,14 +132,15 @@ public class LpsolveAPI extends AbstractSolverAPI {
         lpSolverTer.setObjFn(fctObj);
         lpSolverTer.solve();
 
+        lpSolverTer.printLp();
+        lpSolverTer.writeLp(getCohSolverFile());
+
         nouvelleFctCout = Arrays.copyOfRange(lpSolverTer.getPtrVariables(), 0, getNbVariables());
         printNewCout();
         double dist=distanceManhattan();
 
-        lpSolverTer.printLp();
-        lpSolverTer.writeLp(getCohSolverFile());
         updateFunction();
-        lpSolver.printLp();
+        // lpSolver.printLp();
         System.out.println("--------La fonction de coût est maintenant cohérente (dist parcourue= " + dist + ")\n");
         valOptimal=lpSolverTer.getObjective();
     }
@@ -171,7 +176,7 @@ public class LpsolveAPI extends AbstractSolverAPI {
         // on recherche les contraintes actives (="saturées")
         double[] constrs;
         while (newMRU.getObjective() != 0) {
-            System.out.println("\nValeurs : " + Arrays.toString(newMRU.getPtrVariables()));
+            //System.out.println("\nValeurs : " + Arrays.toString(newMRU.getPtrVariables()));
             // on liste les hashcode de chaque contrainte saturée pour ensuite compter les occurences
             List<Integer> satConstraints = new ArrayList<>();
             constrs = newMRU.getPtrConstraints();
@@ -196,6 +201,7 @@ public class LpsolveAPI extends AbstractSolverAPI {
             }
             // ...et on supprime toutes ses occurences
             int max = getNbContraintes();
+            System.out.println("\n");
             for (int i = max; i >= 1; i--){
                 double[] arr = newMRU.getPtrRow(i);
                 arr[0]=newMRU.getRh(i);
