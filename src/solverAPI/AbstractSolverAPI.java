@@ -7,7 +7,7 @@ import lpsolve.*;
 
 public abstract class AbstractSolverAPI {
 
-    protected LpSolve lpSolver;
+    public LpSolve lpSolver;
     protected LpSolve lpSolverBis;
     protected LpSolve lpSolverTer;
     protected final String filePath;

@@ -1,275 +1,212 @@
 package evaluationAPI;
 
+import lpsolve.LpSolve;
 import lpsolve.LpSolveException;
 import solverAPI.AbstractSolverAPI;
 import solverAPI.LpsolveAPI;
 
-import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Random;
-import java.util.Scanner;
+
 
 public class EvaluationAPI {
 
-    private int n;
-    private double[] xOptimal;
-    private double[] y;
+    private final int n;
+    private final double C;
+    private final double[] xOptimal;
     private double [] x;
-    private double [][] MRU;
-    private int maxValue = 200;
+    private double[] y;
+    private double[] z;
+    private double [] dx;
+    private double [] dy;
+    private double [] dz;
     private AbstractSolverAPI solver;
     private String evalFile = "src/evaluationAPI/evalAPI.lp";
-    private StringBuilder donneesEval;
-    private int idLastContrainte;
-    private int idStartFonction;
-    private int idEndFonction;
 
-    public EvaluationAPI(int n) throws LpSolveException {
-        donneesEval = new StringBuilder();
-        xOptimal = new double[n];
-        y = new double[n];
-        x = new double[n];
+    public EvaluationAPI(int n, double C) throws IOException, LpSolveException {
         this.n = n;
+        this.C = C;
+        xOptimal = new double[n];
+        x = new double[n];
+        y = new double[n];
+        z = new double[n];
+
+        FileWriter myWriter = new FileWriter(evalFile, false);
+        myWriter.write(initFile());
+        myWriter.close();
         solver = new LpsolveAPI(evalFile, 0);
+        solver.createSolverFile();
     }
 
     /**
      * Démarre l'évaluation de la méthode
-     * @param nbIter nombre d'itération sur lesquelles vont être effectuées l'évaluation
+     * @param nbIter nombre d'itérations sur lesquelles vont être effectuées l'évaluation
      */
-    public void evaluer(int nbIter) throws IOException, LpSolveException {
-        lectureFichier();
-        MRU = new double[nbIter][n+1];
-        for(int i=0; i<nbIter; i++){
-            randomContrainte(i);
-            ecrireContrainte(i);
-            runSolver();
-            //System.out.println(solver.getStatut());
-            while (!solver.getStatut().equals("right")){
-                System.out.println("On refait contrainte "+i);
-                affichageMRU(i);
-                randomContrainte(i);
-                reecritureContrainte(i);
-                runSolver();
-            }
-            reecritureFonction(solver.getNouvelleFctCout());
-            randomCout(i+1);
-            System.out.println((i+1)+" contrainte(s) ajoutée(s) : ");
-            System.out.println("Résultat solveur : "+solver.getValOptimal());
-            System.out.println("Distance avec coût aléatoire : "+distanceManhattan()+"\n");
-            affichageMRU(i);
-            System.out.println("_________\n");
-        }
-    }
+    public void evaluer(int nbIter) throws LpSolveException {
+        dx = new double[nbIter];
+        dy = new double[nbIter];
+        dz = new double[nbIter];
 
-    /**
-     * Affiche l'ensemble des contraintes déjà générée
-     * @param nbContrainte nombre de contraintes générées jusqu'à présent
-     */
-    private void affichageMRU(int nbContrainte) {
-        for(int i=0; i<=nbContrainte; i++){
-            for(int j=0; j<n; j++){
-                System.out.print(MRU[i][j]+"x"+(j+1)+" ");
-            }
-            System.out.println("< "+ MRU[i][n]);
-        }
-    }
+        // initialiser les n contraintes du MRU dans solver, plus une contrainte x1+...+xn=C
+        int code = 2;
+        int cpt = 0;
 
-    /**
-     * Génère une nouvelle contrainte aléatoire
-     * TODO : faire en sorte que xOptimal soit l'optimal
-     * @param numContrainte numéro de la contrainte ajoutée
-     */
-    private void randomContrainte(int numContrainte){
-        Random r = new Random();
-        boolean negatif = r.nextFloat() > 0.5;
-        System.out.println("Génération contrainte "+numContrainte);
-        for(int i =0; i<=n; i++){
-            MRU[numContrainte][i] = r.nextFloat()* (maxValue + 1) ;
-            if(negatif)
-                MRU[numContrainte][i] = -1*MRU[numContrainte][i];
-        }
-        System.out.println("Contrainte "+numContrainte+" générée");
-    }
+        // nouv. idée : 1 seule contrainte, telle que max x1+...+xn n'est pas unbounded PUIS que x1+...+xn=C faisable
 
-    /**
-     * Génère une fonction de coût aléatoire qui satisfait MRU
-     * @param nbContraintes nombre de contraintes dans MRU
-     */
-    private void randomCout(int nbContraintes){
-        Random r = new Random();
-        boolean correct = false;
-        double res;
-        System.out.println("Génération coût aléatoire");
-        int cpt=1;
-        while(!correct) {
-            correct = true;
+        // en vrai repenser le bullshit "x*=0", un optimal dans un coin c'est totalement biaisé en défaveur du x au bord
+        // un x au centre d'un MRU de n+1 contraintes pré-initialisées ? ou juste en (1,..., 1) ?
+        // dans ce cas faire de vrais checks pour la génération des contraintes, car - évident que x*=0
 
-            //On génère une fonction de coût aléatoire
-            for (int i = 0; i < n; i++) {
-                y[i] = r.nextFloat()* (maxValue + 1);
-                System.out.print(y[i]+" ");
-            }
-            System.out.println();
-
-            //On vérifie que la fonction de coût générée satisfait toute les contraintes
-            for(int i = 0; i<nbContraintes && correct; i++){
-                res=0;
-                for(int j=0; j<n; j++){
-                    res =+ y[j]*MRU[i][j];
-                    if(res > MRU[i][n]){
-                        correct = false;
-                        System.out.println("Ne convient pas avec contrainte "+i);
-                    }
+        while (cpt<5){//code != 0){
+            if (cpt>0){
+                for (int i = n+1; i >= 1; i--){
+                    solver.lpSolver.delConstraint(i);
                 }
             }
+            for(int i=1; i<=n; i++){
+                double[] c = randomContrainte();
+                solver.lpSolver.addConstraint(c, LpSolve.LE, c[n+1]);
+                System.out.println("Contrainte n°" + i + " générée : " + strContrainte(c));
+            }
+            double[] lastConstr = new double[n+1];
+            Arrays.fill(lastConstr, 1);
+            solver.lpSolver.addConstraint(lastConstr, LpSolve.EQ, C);
+            code = solver.lpSolver.solve();
+            System.out.println("code solvabilité : " + code);
             cpt++;
         }
+        System.out.println("Initialisation des contraintes OK (" + cpt + " essais)\n");
+
+        // initialiser x comme la solution : dans MRU et à distance C
+        x = solver.lpSolver.getPtrVariables();
+        // enlever la dernière contrainte x1+...+xn=C
+        solver.lpSolver.delConstraint(n+1);
+        solver.lpSolver.printLp();
+
+
+        for(int i=1; i<=nbIter; i++){
+            addContrainte(n+i);
+            // reprint tout MRU à chaque fois ?
+            solver.run();
+            solver.parseOutput(); // nécessairement cas 2.1
+            x = solver.getNouvelleFctCout();
+            y = randomCout(n+i);
+            z = getCentroid();
+
+            dx[i]=distanceManhattan(x);
+            dy[i]=distanceManhattan(y);
+            dz[i]=distanceManhattan(z);
+
+            // print les x y z ? et les distances ?
+            System.out.println("_________\n");
+        }
+        // compter fréquences de dx[i]<dy[i] et de x[i]<dz[i]
+        // afficher n + nbIter + les fréquences
+    }
+
+    /**
+     * Ajoute une nouvelle contrainte aléatoire à MRU telle que xOptimal est dans MRU mais pas x
+     */
+    private void addContrainte(int numContrainte) throws LpSolveException {
+        boolean b = true;
+        double[] c = new double[n+2];
+        int cpt = 0;
+        while (b){
+            // c0x0 + ... + cn-1xn-1 <= cn, vrai si x=0 et cn>=0
+            c = randomContrainte();
+            double sum = 0;
+            for (int i=0; i<n; i++){
+                sum += c[i+1]*x[i];
+            }
+            b = (sum<=c[n+1]);
+            cpt++;
+        }
+        // on s'est arrêté avec c.x>cn, donc x ne respectant pas la contrainte
+        solver.lpSolver.addConstraint(c, LpSolve.LE, c[n]);
+        System.out.println("Contrainte n°" + numContrainte + " générée en " + cpt + " essais : " + strContrainte(c));
+    }
+
+    /**
+     * @return une contrainte aléatoire
+     */
+    private double[] randomContrainte() {
+        Random r = new Random();
+        double[] c = new double[n+2];
+        // les n coeffs...
+        for (int i=1; i<=n; i++){
+            c[i] = 2*r.nextDouble() - 1;
+        }
+        // ...plus le terme rhs à la fin
+        c[n+1]=r.nextDouble();
+        return c;
+    }
+
+    /**
+     * @return une chaîne de caractères représentant une contrainte
+     */
+    private String strContrainte(double[] s){
+        StringBuilder t = new StringBuilder();
+        for (int i=1; i<n; i++){
+            t.append(s[i]).append("x").append(i).append(" + ");
+        }
+        t.append(s[n]).append("x").append(n).append(" <= ").append(s[n+1]);
+        return t.toString();
+    }
+
+    /**
+     * @param numContrainte nombre de contraintes à ce stade dans MRU
+     * @return une fonction de coût aléatoire qui satisfait MRU
+     */
+    private double[] randomCout(int numContrainte) throws LpSolveException {
+        LpSolve ysolver = solver.lpSolver.copyLp(); // solveur ayant pour contraintes le MRU
+        double[] randCout = new double[n];
+
+        // min x1, max x1 -> y[0] entre ces bornes
+
+        // pour i de 2 à numContrainte :
+            // ajouter en contrainte la composante choisie juste avant "xi-1=y[i-2]"
+            // min xi, max xi -> y[i] entre ces bornes
+
+        return randCout;
+    }
+
+    /**
+     * @return le centre de masse du polytope délimité par MRU
+     */
+    private double[] getCentroid(){
+        int cpt = 0;
+        // cf. les nombreuses méthodes très compliquées
+
+        // pareil que randomCout mais avec des contraintes médianes au lieu de randoms ? pas vraiment centroïde alors...
+
         System.out.println("Coût aléatoire généré au bout de "+cpt+" essais");
+        return new double[n];
     }
 
     /**
-     * Écrit une contrainte de MRU dans le fichier d'évaluation
-     * @param idContrainte numéro de la contrainte à écrire
+     * Calcule la distance de Manhattan entre la solution optimale et une fonction de coût
+     * @param w une fonction de coût
      */
-    private void ecrireContrainte(int idContrainte){
-        donneesEval.append("\n// c"+(idContrainte+1)+" inf\n");
-        idLastContrainte = donneesEval.length();
-        for(int i=0; i<n; i++){
-            if(MRU[idContrainte][i] != 0){
-                donneesEval.append(MRU[idContrainte][i]+"x"+(i+1)+" ");
-            }
-        }
-        donneesEval.append(MRU[idContrainte][n]+"");
-        try {
-            FileWriter myWriter = new FileWriter(evalFile);
-            myWriter.write(donneesEval.toString());
-            myWriter.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    /**
-     * Réécrit la dernière contrainte générée dans le fichier d'évaluation
-     * @param idContrainte numéro de la dernière contrainte générée
-     */
-    private void reecritureContrainte(int idContrainte){
-        StringBuilder contrainte = new StringBuilder();
-        for(int i=0; i<n; i++){
-            if(MRU[idContrainte][i] != 0){
-                contrainte.append(MRU[idContrainte][i]+"x"+(i+1)+" ");
-            }
-        }
-        contrainte.append(MRU[idContrainte][n]+"");
-        donneesEval.replace(idLastContrainte, donneesEval.length(), contrainte.toString());
-
-        //On rééécrit le problème dans le fichier d'évaluation
-        FileWriter myWriter = null;
-        try {
-            myWriter = new FileWriter(evalFile);
-            myWriter.write(donneesEval.toString());
-            myWriter.close();
-        }
-        catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    /**
-     * Calcule la distance de Manhattan entre la solution optimal et la fonction de coût aléatoire
-     * @return la distance calculée
-     */
-    private double distanceManhattan(){
+    private double distanceManhattan(double[] w){
         double res = 0;
         for(int i=0; i<n; i++){
-            res += Math.abs(xOptimal[i]-y[i]);
+            res += Math.abs(xOptimal[i]-w[i]);
         }
         return res;
     }
 
     /**
-     * Redéfinit la nouvelle fonction de coût en fonction du résultat du solveur
-     * Réécrit cette fonction si besoin dans le fichier d'évaluation
-     * @param solucSolveur nombre de contrainte écrites dans le fichier
+     * @return les premières lignes du fichier de travail
      */
-    private void reecritureFonction(double[] solucSolveur){
-        boolean empty = true;
-        double[] temp = x;
-        for(int i=0; i<n; i++){
-            if(0 != solucSolveur[i]){
-                empty = false;
-            }
-            x[i] = solucSolveur[i];
+    private String initFile(){
+        StringBuilder s = new StringBuilder("/* Objective function */\nmin: ");
+        for (int i=1; i<n; i++){
+            s.append("x").append(i).append(" + ");
         }
-        if(empty){
-            x = temp;
-        }
-        else{
-            System.out.println("On réécrit la fonction de cout");
-            StringBuilder fonctionCout = new StringBuilder();
-            for(int i=0; i<n; i++){
-                fonctionCout.append(x[i]+" ");
-            }
-            fonctionCout.append("#");
-            System.out.println(idStartFonction);
-            donneesEval.replace(idStartFonction, idEndFonction, fonctionCout.toString());
-            idEndFonction = donneesEval.indexOf("#");
-            donneesEval.deleteCharAt(idEndFonction);
-            FileWriter myWriter = null;
-            try {
-                myWriter = new FileWriter(evalFile);
-                myWriter.write(donneesEval.toString());
-                myWriter.close();
-            }
-            catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
+        s.append("x").append(n).append(";\n");
+        return s.toString();
     }
 
-    /**
-     * Lance l'éxécution du programme utilisant le solveur
-     */
-    private void runSolver() throws IOException, LpSolveException {
-        solver.createSolverFile();
-        solver.run();
-        // solver.display();
-        solver.parseOutput();
-    }
-
-    /**
-     * Lecture du fichier permettant de récupérer le début du fichier d'évaluation
-     */
-    private void lectureFichier(){
-        File file = new File(evalFile);
-        String ligne;
-        try {
-            Scanner myReader = new Scanner(file);
-            while (myReader.hasNext()){
-                ligne = myReader.nextLine();
-                donneesEval.append(ligne+"\n");
-                idStartFonction = donneesEval.length();
-
-                // On regarde si la ligne correspond à la fonction
-                if (ligne.equals("// fonction")) {
-                    ligne = myReader.nextLine();
-                    donneesEval.append(ligne);
-                    String[] ligneTab = ligne.split(" ");
-                    int i = 0;
-
-                    // On écrit la fonction
-                    for (String s : ligneTab) {
-                        x[i] = Float.parseFloat(s);
-                        i++;
-                    }
-                    idEndFonction = donneesEval.length();
-                }
-            }
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        }
-    }
 }
