@@ -2,7 +2,6 @@ import evaluationAPI.*;
 import lpsolve.LpSolveException;
 import solverAPI.LpsolveAPI;
 
-import java.io.File;
 import java.io.IOException;
 
 public class MainAPI {
@@ -12,8 +11,8 @@ public class MainAPI {
         // On lance la partie évaluation
         // Ici 2 règles et 5 itérations
         if(args.length <= 1) {
-            EvaluationAPI1 e = new EvaluationAPI1(4, 1.0, false);
-            e.evaluer(15);
+            AbstractEvaluationAPI e = new EvaluationAPI3(4, 3.0, false);
+            e.evaluer(25);
         } else {
 
             // récupération du fichier lp

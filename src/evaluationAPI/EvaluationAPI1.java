@@ -28,36 +28,43 @@ public class EvaluationAPI1 extends AbstractEvaluationAPI {
     }
 
     /**
-     * Initialise les contraintes de départ et xOptimal si nécessaire
+     * Initialise 1 contrainte pour borner MRU, xOptimal=0, et x sur S(0,C)
      */
     public void initEvaluer() throws LpSolveException {
-        // initialise les n contraintes du MRU dans solver, plus une contrainte x1+...+xn=C
-        int code = 2;
+        int solvecode = 2;
         int cpt = 0;
 
-        while (code != 0){
+        while (solvecode!=0){
             if (cpt>0){
-                for (int i = n+1; i >= 1; i--){
-                    solver.lpSolver.delConstraint(i);
-                }
+                solver.lpSolver.delConstraint(1);
             }
-            for(int i=1; i<=n; i++){
-                double[] c = randomContrainte();
-                solver.lpSolver.addConstraint(c, LpSolve.LE, c[n+1]);
-                System.out.println("Contrainte n°" + i + " générée : " + strContrainte(c));
+
+            Random r = new Random();
+            double[] c = new double[n+2]; // contrainte à coeffs tous positifs pour borner MRU
+            for (int i=1; i<=n+1; i++){
+                c[i] = r.nextDouble();
             }
+            solver.lpSolver.addConstraint(c, LpSolve.LE, c[n+1]);
+            if (verb){
+                System.out.println("Contrainte n°1 générée : " + strContrainte(c));
+            }
+
             double[] lastConstr = new double[n+1];
             Arrays.fill(lastConstr, 1);
             solver.lpSolver.addConstraint(lastConstr, LpSolve.EQ, C);
-            code = solver.lpSolver.solve();
-            System.out.println("code solvabilité : " + code);
+            solvecode = solver.lpSolver.solve();
+            // enlève la dernière contrainte x1+...+xn=C
+            solver.lpSolver.delConstraint(2);
             cpt++;
         }
         System.out.println("Initialisation des contraintes OK (" + cpt + " essais)\n");
+        // initialise x comme la solution : dans MRU et à distance C
+        x = solver.lpSolver.getPtrVariables();
+        System.out.println("x initialisé à " + Arrays.toString(x));
     }
 
     /**
-     * @return une contrainte aléatoire
+     * @return une contrainte aléatoire de coefficients entre -1 et 1 et de RHS entre 0 et 1
      */
     public double[] randomContrainte() {
         Random r = new Random();
@@ -72,13 +79,11 @@ public class EvaluationAPI1 extends AbstractEvaluationAPI {
     }
 
     /**
-     * @param numContrainte nombre de contraintes à ce stade dans MRU
      * @param rand si oui coût random, si non pseudo-centroïde
      * @return une fonction de coût aléatoire dans MRU, ou le centre de masse du polytope délimité par MRU
      */
-    public double[] getRandomOrCentroid(int numContrainte, boolean rand) throws LpSolveException {
+    public double[] getRandomOrCentroid(boolean rand) throws LpSolveException {
         LpSolve altSolver = solver.lpSolver.copyLp(); // solveur ayant pour contraintes le MRU
-        int p = altSolver.getNrows(); // nombre de contraintes à ce stade dans MRU
         solver.emptyBounds(altSolver);
         double[] cout = new double[n];
         double binf;

@@ -28,7 +28,7 @@ public class EvaluationAPI5 extends AbstractEvaluationAPI {
     }
 
     /**
-     * Initialise les contraintes de départ et xOptimal si nécessaire
+     * Initialise les contraintes de départ, x, et xOptimal si nécessaire
      */
     public void initEvaluer() throws LpSolveException {
         // initialise les n contraintes du MRU dans solver, plus une contrainte x1+...+xn=C
@@ -72,13 +72,11 @@ public class EvaluationAPI5 extends AbstractEvaluationAPI {
     }
 
     /**
-     * @param numContrainte nombre de contraintes à ce stade dans MRU
      * @param rand si oui coût random, si non pseudo-centroïde
      * @return une fonction de coût aléatoire dans MRU, ou le centre de masse du polytope délimité par MRU
      */
-    public double[] getRandomOrCentroid(int numContrainte, boolean rand) throws LpSolveException {
+    public double[] getRandomOrCentroid(boolean rand) throws LpSolveException {
         LpSolve altSolver = solver.lpSolver.copyLp(); // solveur ayant pour contraintes le MRU
-        int p = altSolver.getNrows(); // nombre de contraintes à ce stade dans MRU
         solver.emptyBounds(altSolver);
         double[] cout = new double[n];
         double binf;
