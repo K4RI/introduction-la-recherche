@@ -37,7 +37,7 @@ public class LpsolveAPI extends AbstractSolverAPI {
     }
 
     /**
-     * Méthode permettant de récupérer les valeurs optimales et réalisables du programme linéaire
+     * Méthode permettant de distnguer les cas 1 et 2
      */
     public void parseOutput() throws LpSolveException {
         valOptimal = lpSolver.getObjective();
@@ -45,18 +45,21 @@ public class LpsolveAPI extends AbstractSolverAPI {
         if (solvecode==0){
             if (verbose){
                 lpSolver.printLp();
+                System.out.println("\nLa solution est dans MRU (cas 1)");
             }
-
-            System.out.println("\nLa solution est dans MRU (cas 1)");
             if (!Objects.equals(statut, "inf_incoh")) {
                 statut="right";
             }
 
         } else if(solvecode==2){
-            System.out.println("\nLe problème est infaisable (cas 2)");
+            if(verbose){
+                System.out.println("\nLe problème est infaisable (cas 2)");
+            }
             retryLpFile();
         } else if (solvecode==3) {
-            System.out.println("\nLe problème n'est pas borné");
+            if (verbose){
+                System.out.println("\nLe problème n'est pas borné");
+            }
             statut="unbounded";
         } else {
             System.out.println("Code inconnu : " + solvecode);
@@ -78,7 +81,9 @@ public class LpsolveAPI extends AbstractSolverAPI {
         int newStatut = lpSolverBis.solve();
 
         if(newStatut==0){
-            System.out.println("MRU cohérent (cas 2.1)");
+            if(verbose){
+                System.out.println("MRU cohérent (cas 2.1)");
+            }
             if (!Objects.equals(statut, "inf_incoh")) {
                 statut="inf_coh";
             }
@@ -100,7 +105,9 @@ public class LpsolveAPI extends AbstractSolverAPI {
      * Méthode permettant de retrouver la plus petite distance entre une fonction de coût et MRU (cas 2.1)
      */
     private void findShortestDistance() throws LpSolveException {
-        printVariables();
+        if (verbose){
+            printVariables();
+        }
         lpSolverTer = lpSolver.copyLp();
         lpSolverTer.setLpName("Problème 2.1");
         emptyBounds(lpSolverTer);
@@ -137,11 +144,14 @@ public class LpsolveAPI extends AbstractSolverAPI {
         lpSolverTer.writeLp(getCohSolverFile());
 
         nouvelleFctCout = Arrays.copyOfRange(lpSolverTer.getPtrVariables(), 0, getNbVariables());
-        printNewCout();
         double dist=distanceManhattan();
+        System.out.println("Coût d'optimisation linéaire généré");
 
         updateFunction();
-        System.out.println("--------La fonction de coût est maintenant cohérente (dist parcourue= " + dist + ")\n");
+        if(verbose){
+            printNewCout();
+            System.out.println("--------La fonction de coût est maintenant cohérente (dist parcourue= " + dist + ")\n");
+        }
         valOptimal=lpSolverTer.getObjective();
     }
 
@@ -225,15 +235,6 @@ public class LpsolveAPI extends AbstractSolverAPI {
         // une fois réglé le problème du MRU, on reprend du début (cas 1 ou 2.1)
         System.out.println("--------MRU est maintenant cohérent (" + (oldNbConst-getNbContraintes()) + "/"+oldNbConst+" contraintes retirées)\n");
         parseOutput();
-    }
-
-    /**
-     * Méthode permettant de réinitialiser à 0 Inf les bornes de toutes les variables
-     */
-    private void emptyBounds(LpSolve s) throws LpSolveException {
-        for (int i = 1; i <= s.getNcolumns(); i++) {
-            s.setBounds(i, 0, s.getInfinite());
-        }
     }
 
     /**

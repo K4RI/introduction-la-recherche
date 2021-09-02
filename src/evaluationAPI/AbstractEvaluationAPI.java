@@ -68,6 +68,7 @@ public abstract class AbstractEvaluationAPI {
             solver.run();
             solver.parseOutput(); // nécessairement cas 2.1
             x = solver.getNouvelleFctCout();
+
             y = getRandomOrCentroid(n+i, true);
             z = getRandomOrCentroid(n+i, false);
 
@@ -85,7 +86,7 @@ public abstract class AbstractEvaluationAPI {
             System.out.println("z = " + Arrays.toString(z));
             // solver.lpSolver.printLp();
         }
-        System.out.println("Distances x : " + Arrays.toString(dx));
+        System.out.println("\n\n::::::::::::::::: FIN DES ITERATIONS\nDistances x : " + Arrays.toString(dx));
         System.out.println("Distances y : " + Arrays.toString(dy));
         System.out.println("Distances z : " + Arrays.toString(dz));
 

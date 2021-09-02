@@ -55,14 +55,8 @@ public abstract class AbstractSolverAPI {
         solvecode = lpSolver.solve();
     }
 
-    /**
-     * Méthode permettant de récupérer les valeurs optimales et réalisables du programme linéaire
-     */
     public abstract void parseOutput() throws LpSolveException;
 
-    /**
-     * Méthode permettant de créer un fichier lp depuis un fichier texte
-     */
     public abstract void createSolverFile() throws IOException, LpSolveException;
 
     public String getFilePath() {
@@ -121,5 +115,14 @@ public abstract class AbstractSolverAPI {
         }
         xStr.append("]");
         System.out.println(xStr);
+    }
+
+    /**
+     * Méthode permettant de réinitialiser à 0 Inf les bornes de toutes les variables
+     */
+    public void emptyBounds(LpSolve s) throws LpSolveException {
+        for (int i = 1; i <= s.getNcolumns(); i++) {
+            s.setBounds(i, 0, s.getInfinite());
+        }
     }
 }

@@ -12,8 +12,8 @@ public class MainAPI {
         // On lance la partie évaluation
         // Ici 2 règles et 5 itérations
         if(args.length <= 1) {
-            EvaluationAPI1 e = new EvaluationAPI1(2, 1.0, false);
-            e.evaluer(5);
+            EvaluationAPI1 e = new EvaluationAPI1(4, 1.0, false);
+            e.evaluer(15);
         } else {
 
             // récupération du fichier lp

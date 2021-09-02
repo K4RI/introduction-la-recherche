@@ -28,7 +28,7 @@ public class EvaluationAPI2 extends AbstractEvaluationAPI {
     }
 
     /**
-     * Initialise les contraintes de départ, et xOptimal si nécessaire
+     * Initialise les contraintes de départ et xOptimal si nécessaire
      */
     public void initEvaluer() throws LpSolveException {
         // initialise les n contraintes du MRU dans solver, plus une contrainte x1+...+xn=C
@@ -78,23 +78,40 @@ public class EvaluationAPI2 extends AbstractEvaluationAPI {
      */
     public double[] getRandomOrCentroid(int numContrainte, boolean rand) throws LpSolveException {
         LpSolve altSolver = solver.lpSolver.copyLp(); // solveur ayant pour contraintes le MRU
+        int p = altSolver.getNrows(); // nombre de contraintes à ce stade dans MRU
+        solver.emptyBounds(altSolver);
         double[] cout = new double[n];
-        double borne_inf;
-        double borne_sup;
+        double binf;
+        double bsup;
+        double c;
+        altSolver.setObjFn(new double[n+1]);
 
-        // TODO : min x1, max x1 -> y[0] entre ces bornes (random ou médian)
-
-        // TODO : pour i de 2 à numContrainte :
-        //  ajouter en contrainte la composante choisie juste avant : "xi-1=y[i-2]"
-        //  min xi, max xi -> y[i] entre ces bornes (random ou médian)
+        for (int i=1; i<=n; i++){
+            // System.out.println(":::::génération coût, variable n°" + i);
+            altSolver.setMat(0, i, 1); // objectif xi
+            if (i>1){
+                altSolver.setMat(0, i-1, 0);
+                altSolver.setBounds(i-1, cout[i-2], cout[i-2]);
+            }
+            altSolver.setMinim(); // objectif min
+            altSolver.solve();
+            binf = altSolver.getPtrVariables()[i-1];
+            altSolver.setMaxim(); // objectif max
+            altSolver.solve();
+            bsup = altSolver.getPtrVariables()[i-1];
+            // altSolver.printLp();
+            if (rand) {
+                Random r = new Random(); c = r.nextDouble();
+            } else {
+                c = 0.5; }
+            cout[i-1]=binf+c*(bsup-binf);
+        }
 
         if (rand){
             System.out.println("Coût aléatoire généré");
         } else {
             System.out.println("Centroïde généré");
         }
-
         return cout;
     }
-
 }
