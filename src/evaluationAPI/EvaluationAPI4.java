@@ -10,10 +10,13 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.Random;
 
-
-public class EvaluationAPI {
-    // TODO : une classe abstraite pour l'évaluation
-    //  les seules variations sur les extensions seraient l'init, randomContrainte, randomCout/getCentroid (qu'on pourrait lier)
+/**
+ * le 2ème plus proche de la vraie étude
+ * init : 1 seule contrainte à coeffs positifs pour bornesup la distance, xOptimal =/= 0
+ * à chaque iter : coeffs entiers relatifs non-tous positifs, RHS nul
+ * MRU est un cône convexe polyhédral
+ */
+public class EvaluationAPI4 {
 
     private final int n;
     private final double C;
@@ -27,7 +30,7 @@ public class EvaluationAPI {
     private AbstractSolverAPI solver;
     private String evalFile = "src/evaluationAPI/evalAPI.lp";
 
-    public EvaluationAPI(int n, double C) throws IOException, LpSolveException {
+    public EvaluationAPI4(int n, double C) throws IOException, LpSolveException {
         this.n = n;
         this.C = C;
         xOptimal = new double[n];
@@ -56,9 +59,10 @@ public class EvaluationAPI {
         int cpt = 0;
 
         // TODO: : 1 seule contrainte, telle que max x1+...+xn n'est pas unbounded PUIS que x1+...+xn=C faisable
-        //  en vrai repenser l'idée "x*=0" : un optimal dans un coin biaise totalement en défaveur du x au bord
-        //  un x au centre d'un MRU de n+1 contraintes pré-initialisées ? ou juste en (1,..., 1) ?
-        //  dans ce cas faire de vrais checks pour la génération des contraintes, car - évident que x*=0
+
+        // TODO : en vrai repenser le bullshit "x*=0", un optimal dans un coin c'est totalement biaisé en défaveur du x au bord
+        // TODO : un x au centre d'un MRU de n+1 contraintes pré-initialisées ? ou juste en (1,..., 1) ?
+        // TODO : dans ce cas faire de vrais checks pour la génération des contraintes, car - évident que x*=0
 
         while (code != 0){
             if (cpt>0){
@@ -181,6 +185,8 @@ public class EvaluationAPI {
         double[] randCout = new double[n];
         double borne_inf;
         double borne_sup;
+
+
 
         // TODO : min x1, max x1 -> y[0] entre ces bornes
 
