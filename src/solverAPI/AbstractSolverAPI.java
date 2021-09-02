@@ -26,15 +26,17 @@ public abstract class AbstractSolverAPI {
     protected double[] nouvelleFctCout;
     protected int solvecode;
     protected String statut;
+    protected boolean verbose;
 
     /**
      * Constructeur général de solveur de programme linéaire
      * @param filePath chemin du fichier
      * @param options options du solveur
      */
-    public AbstractSolverAPI(String filePath, int options){
+    public AbstractSolverAPI(String filePath, int options, boolean verb){
         this.filePath = filePath;
         this.options = options;
+        this.verbose = verb;
         this.solverFile = "output"+File.separatorChar+"initial_solutionAPI";
         this.newSolverFile = "output"+File.separatorChar+"final_resultAPI";
         this.cohSolverFile = "output"+File.separatorChar+"coh_solverAPI";
@@ -42,7 +44,7 @@ public abstract class AbstractSolverAPI {
         this.incohSolverFile2 = "output"+File.separatorChar+"incoh_solver2API";
         epsilon = 0.001;
         File outputRes = new File("output");
-        outputRes.mkdir();
+        boolean mk = outputRes.mkdir();
     }
 
     /**
@@ -104,8 +106,20 @@ public abstract class AbstractSolverAPI {
     }
 
     public void printNewCout(){
-        for (int i = 0; i < getNbVariables(); i++) {
-            System.out.println("Nouvelle valeur de x" + (i+1) + " = " + nouvelleFctCout[i]);
+        StringBuilder xStr = new StringBuilder("Valeur initiale de x : [");
+        for (int i = 1; i <= getNbVariables(); i++) {
+            xStr.append(nouvelleFctCout[i-1]).append(", ");
         }
+        xStr.append("]");
+        System.out.println(xStr);
+    }
+
+    public void printVariables() throws LpSolveException {
+        StringBuilder xStr = new StringBuilder("Nouvelle valeur de x : [");
+        for (int i = 1; i <= getNbVariables(); i++) {
+            xStr.append(lpSolver.getLowbo(i)).append(", ");
+        }
+        xStr.append("]");
+        System.out.println(xStr);
     }
 }

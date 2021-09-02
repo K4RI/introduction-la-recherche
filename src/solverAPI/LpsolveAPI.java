@@ -14,8 +14,8 @@ public class LpsolveAPI extends AbstractSolverAPI {
      * @param filePath chemin du fichier
      * @param options  options du solveur
      */
-    public LpsolveAPI(String filePath, int options) {
-        super(filePath, options);
+    public LpsolveAPI(String filePath, int options, boolean verb) {
+        super(filePath, options, verb);
         extension = ".lp";
     }
 
@@ -43,7 +43,10 @@ public class LpsolveAPI extends AbstractSolverAPI {
         valOptimal = lpSolver.getObjective();
 
         if (solvecode==0){
-            lpSolver.printLp();
+            if (verbose){
+                lpSolver.printLp();
+            }
+
             System.out.println("\nLa solution est dans MRU (cas 1)");
             if (!Objects.equals(statut, "inf_incoh")) {
                 statut="right";
@@ -97,10 +100,7 @@ public class LpsolveAPI extends AbstractSolverAPI {
      * Méthode permettant de retrouver la plus petite distance entre une fonction de coût et MRU (cas 2.1)
      */
     private void findShortestDistance() throws LpSolveException {
-        for (int i = 1; i <= getNbVariables(); i++) {
-            System.out.println("Valeur initiale de x" + (i) + " = " + lpSolver.getLowbo(i));
-        }
-
+        printVariables();
         lpSolverTer = lpSolver.copyLp();
         lpSolverTer.setLpName("Problème 2.1");
         emptyBounds(lpSolverTer);
@@ -131,8 +131,9 @@ public class LpsolveAPI extends AbstractSolverAPI {
         }
         lpSolverTer.setObjFn(fctObj);
         lpSolverTer.solve();
-
-        lpSolverTer.printLp();
+        if (verbose){
+            lpSolverTer.printLp();
+        }
         lpSolverTer.writeLp(getCohSolverFile());
 
         nouvelleFctCout = Arrays.copyOfRange(lpSolverTer.getPtrVariables(), 0, getNbVariables());
@@ -140,7 +141,6 @@ public class LpsolveAPI extends AbstractSolverAPI {
         double dist=distanceManhattan();
 
         updateFunction();
-        // lpSolver.printLp();
         System.out.println("--------La fonction de coût est maintenant cohérente (dist parcourue= " + dist + ")\n");
         valOptimal=lpSolverTer.getObjective();
     }
@@ -168,7 +168,9 @@ public class LpsolveAPI extends AbstractSolverAPI {
         }
         newMRU.setMat(0, getNbVariables() + 1, 1);
 
-        newMRU.printLp();
+        if (verbose){
+            newMRU.printLp();
+        }
         newMRU.writeLp(getIncohSolverFile1());
         newMRU.solve();
         int oldNbConst = getNbContraintes();
@@ -215,7 +217,9 @@ public class LpsolveAPI extends AbstractSolverAPI {
             newMRU.solve();
         }
         newMRU.setLpName("Problème 2.2 FINAL");
-        newMRU.printLp();
+        if (verbose){
+            newMRU.printLp();
+        }
         newMRU.writeLp(getIncohSolverFile2());
 
         // une fois réglé le problème du MRU, on reprend du début (cas 1 ou 2.1)

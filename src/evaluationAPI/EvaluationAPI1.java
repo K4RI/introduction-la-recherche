@@ -9,15 +9,15 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.Random;
 
-/**
- * Identique à EvaluationAPI, mais xOptimal = (1, ..., 1)
- * adapter les générations de contraintes
- * init : 1 seule contrainte à coeffs positifs pour bornesup la distance
- * à chaque iter : contrainte vérifiée par x* mais pas par x, coeffs non-tous négatifs
- */
-public class EvaluationAPI2 extends AbstractEvaluationAPI {
 
-    public EvaluationAPI2(int n, double C, boolean verb) throws IOException, LpSolveException {
+public class EvaluationAPI1 extends AbstractEvaluationAPI {
+
+    // TODO: : 1 seule contrainte, telle que max x1+...+xn n'est pas unbounded PUIS que x1+...+xn=C faisable
+    //  en vrai repenser l'idée "x*=0" : un optimal dans un coin biaise totalement en défaveur du x au bord
+    //  un x au centre d'un MRU de n+1 contraintes pré-initialisées ? ou juste en (1,..., 1) ?
+    //  dans ce cas faire de vrais checks pour la génération des contraintes, car - évident que x*=0
+
+    public EvaluationAPI1(int n, double C, boolean verb) throws IOException, LpSolveException {
         super(n, C, verb);
 
         FileWriter myWriter = new FileWriter(this.evalFile, false);
@@ -28,7 +28,7 @@ public class EvaluationAPI2 extends AbstractEvaluationAPI {
     }
 
     /**
-     * Initialise les contraintes de départ, et xOptimal si nécessaire
+     * Initialise les contraintes de départ et xOptimal si nécessaire
      */
     public void initEvaluer() throws LpSolveException {
         // initialise les n contraintes du MRU dans solver, plus une contrainte x1+...+xn=C

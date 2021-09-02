@@ -20,12 +20,12 @@ class LpsolveAPITest {
 
     @BeforeEach
     void setUp() {
-        solver1 = new LpsolveAPI("."+File.separatorChar+"src"+File.separatorChar+"testsAPI"+File.separatorChar+ "rightFunctionAPI.lp", 3);
-        solver2 = new LpsolveAPI("."+File.separatorChar+"src"+File.separatorChar+"testsAPI"+File.separatorChar+ "wrongFunctionRightMRUAPI.lp", 3);
-        solver3 = new LpsolveAPI("."+File.separatorChar+"src"+File.separatorChar+"testsAPI"+File.separatorChar+ "wrongMRUAPI.lp", 3);
-        solver4 = new LpsolveAPI("."+File.separatorChar+"src"+File.separatorChar+"testsAPI"+File.separatorChar+"wrongExtensionAPI.mp3", 3);
-        solver5 = new LpsolveAPI("."+File.separatorChar+"src"+File.separatorChar+"testsAPI"+File.separatorChar+"testWrongAPI.lp", 3);
-        solver6 = new LpsolveAPI("."+File.separatorChar+"src"+File.separatorChar+"testsAPI"+File.separatorChar+"wrong_pathAPI.lp", 3);
+        solver1 = new LpsolveAPI("."+File.separatorChar+"src"+File.separatorChar+"testsAPI"+File.separatorChar+ "rightFunctionAPI.lp", 3, true);
+        solver2 = new LpsolveAPI("."+File.separatorChar+"src"+File.separatorChar+"testsAPI"+File.separatorChar+ "wrongFunctionRightMRUAPI.lp", 3, true);
+        solver3 = new LpsolveAPI("."+File.separatorChar+"src"+File.separatorChar+"testsAPI"+File.separatorChar+ "wrongMRUAPI.lp", 3, true);
+        solver4 = new LpsolveAPI("."+File.separatorChar+"src"+File.separatorChar+"testsAPI"+File.separatorChar+"wrongExtensionAPI.mp3", 3, true);
+        solver5 = new LpsolveAPI("."+File.separatorChar+"src"+File.separatorChar+"testsAPI"+File.separatorChar+"testWrongAPI.lp", 3, true);
+        solver6 = new LpsolveAPI("."+File.separatorChar+"src"+File.separatorChar+"testsAPI"+File.separatorChar+"wrong_pathAPI.lp", 3, true);
     }
 
     @Test
