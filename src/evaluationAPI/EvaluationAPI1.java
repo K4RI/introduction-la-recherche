@@ -12,11 +12,6 @@ import java.util.Random;
 
 public class EvaluationAPI1 extends AbstractEvaluationAPI {
 
-    // TODO: : 1 seule contrainte, telle que max x1+...+xn n'est pas unbounded PUIS que x1+...+xn=C faisable
-    //  en vrai repenser l'idée "x*=0" : un optimal dans un coin biaise totalement en défaveur du x au bord
-    //  un x au centre d'un MRU de n+1 contraintes pré-initialisées ? ou juste en (1,..., 1) ?
-    //  dans ce cas faire de vrais checks pour la génération des contraintes, car - évident que x*=0
-
     public EvaluationAPI1(int n, double C, boolean verb) throws IOException, LpSolveException {
         super(n, C, verb);
 

@@ -2,7 +2,8 @@ package evaluationAPI;
 
 import lpsolve.LpSolve;
 import lpsolve.LpSolveException;
-import solverAPI.AbstractSolverAPI;
+import solverAPI.*;
+import sun.awt.SunToolkit;
 
 import java.util.Arrays;
 
@@ -40,7 +41,7 @@ public abstract class AbstractEvaluationAPI {
      *
      * @param nbIter nombre d'itérations sur lesquelles vont être effectuées l'évaluation
      */
-    public void evaluer(int nbIter) throws LpSolveException {
+    public void evaluer(int nbIter) throws Exception {
         dx = new double[nbIter];
         dy = new double[nbIter];
         dz = new double[nbIter];
@@ -57,7 +58,13 @@ public abstract class AbstractEvaluationAPI {
 
         for (int i = 1; i <= nbIter; i++) {
             System.out.println("\n\n///////////////// ITERATION N°" + i + " /////////////////");
-            addContrainte();
+            try {
+                addContrainte();
+            }
+            catch(Exception e){
+                conclEvaluer(cpt_xy, cpt_xz, i);
+                throw new Exception("Génération de nouvelle contrainte impossible");
+            }
             // reprint tout MRU à chaque fois ?
             solver.run();
             solver.parseOutput(); // nécessairement cas 2.1
@@ -79,9 +86,23 @@ public abstract class AbstractEvaluationAPI {
             System.out.println("y = " + Arrays.toString(y));
             System.out.println("z = " + Arrays.toString(z));
             if (isNull(x)) {
+                conclEvaluer(cpt_xy, cpt_xz, i);
                 throw new NullPointerException("\n\nx est nul, suite du protocole impossible");
             }
+            if (dx[i-1]<1e-15) {
+                conclEvaluer(cpt_xy, cpt_xz, i);
+                throw new NullPointerException("\n\nLes distances des coûts à xOptimal stagnent, continuation du protocole inutile");
+            }
+
         }
+        conclEvaluer(cpt_xy, cpt_xz, nbIter);
+    }
+
+    /**
+     * Affiche les résultats de l'évaluation
+     */
+    private void conclEvaluer(int cpt_xy, int cpt_xz, int nbIter){
+
         System.out.println("\n\n::::::::::::::::: FIN DES ITERATIONS\n\nDistances x : " + Arrays.toString(dx));
         System.out.println("Distances y : " + Arrays.toString(dy));
         System.out.println("Distances z : " + Arrays.toString(dz));
@@ -99,12 +120,13 @@ public abstract class AbstractEvaluationAPI {
         double[] c = new double[n + 2];
         int cpt = 0;
         while (b) {
-            // c0x0 + ... + cn-1xn-1 <= cn, vrai si x=0 et cn>=0
             c = randomContrainte();
             b = (checkConstr(c, x) || !(checkConstr(c, xOptimal)));
             cpt++;
+            if (cpt>1e6){
+                throw new SunToolkit.InfiniteLoop();
+            }
         }
-        // on s'est arrêté avec c.x>cn, donc x ne respectant pas la contrainte
         solver.lpSolver.addConstraint(c, LpSolve.LE, c[n + 1]);
         System.out.println("Contrainte n°" + solver.lpSolver.getNrows() + " générée en " + cpt + " essais : " + strContrainte(c));
     }
@@ -173,7 +195,7 @@ public abstract class AbstractEvaluationAPI {
     /**
      * @return vrai si un tableau est rempli de zéros, faux sinon
      */
-    private boolean checkConstr(double[] c, double[] arr) {
+    public boolean checkConstr(double[] c, double[] arr) {
         double sum = 0;
         for (int i = 0; i < n; i++) {
             sum += c[i + 1] * arr[i];

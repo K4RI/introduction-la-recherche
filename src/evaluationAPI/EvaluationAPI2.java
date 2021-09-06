@@ -88,32 +88,31 @@ public class EvaluationAPI2 extends AbstractEvaluationAPI {
      */
     public double[] getRandomOrCentroid(boolean rand) throws LpSolveException {
         LpSolve altSolver = solver.lpSolver.copyLp(); // solveur ayant pour contraintes le MRU
-        emptyInfBounds(altSolver);
+        solver.emptyBounds(altSolver);
         double[] cout = new double[n];
-        double binf;
-        double bsup;
+        double bornInf;
+        double bornSup;
         double c;
         altSolver.setObjFn(new double[n+1]);
 
         for (int i=1; i<=n; i++){
             // System.out.println(":::::génération coût, variable n°" + i);
-            altSolver.setMat(0, i, 1); // objectif xi
+            altSolver.setMat(0, i, 1); // l'objectif est sur xi
             if (i>1){
-                altSolver.setMat(0, i-1, 0);
-                altSolver.setBounds(i-1, cout[i-2], cout[i-2]);
+                altSolver.setMat(0, i-1, 0); // mais pas sur les autres composantes
+                altSolver.setBounds(i-1, cout[i-2], cout[i-2]); // avec une condition sur les composantes déjà calculées
             }
-            altSolver.setMinim(); // objectif min
+            altSolver.setMinim(); // objectif min xi
             altSolver.solve();
-            binf = altSolver.getPtrVariables()[i-1];
-            altSolver.setMaxim(); // objectif max
+            bornInf = altSolver.getPtrVariables()[i-1];
+            altSolver.setMaxim(); // objectif max xi
             altSolver.solve();
-            bsup = altSolver.getPtrVariables()[i-1];
-            // altSolver.printLp();
+            bornSup = altSolver.getPtrVariables()[i-1];
             if (rand) {
                 Random r = new Random(); c = r.nextDouble();
             } else {
                 c = 0.5; }
-            cout[i-1]=binf+c*(bsup-binf);
+            cout[i-1]=bornInf+c*(bornSup-bornInf); // xi au hasard ou médian entre ces deux bornes
         }
 
         if (rand){
@@ -124,6 +123,9 @@ public class EvaluationAPI2 extends AbstractEvaluationAPI {
         return cout;
     }
 
+    /**
+     * Etend les bornes des variables à R tout entier
+     */
     private void emptyInfBounds(LpSolve s) throws LpSolveException {
         for (int i = 1; i <= s.getNcolumns(); i++) {
             s.setBounds(i, -s.getInfinite(), s.getInfinite());

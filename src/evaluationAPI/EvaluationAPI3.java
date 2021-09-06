@@ -23,7 +23,7 @@ public class EvaluationAPI3 extends AbstractEvaluationAPI {
     }
 
     /**
-     * 1 contrainte pour borner MRU, xOptimal=(1, ..., 1), et x sur S(0,C)
+     * 1 contrainte pour borner MRU, xOptimal=(1, ..., 1), et x sur S(xOptimal,C)
      */
     public void initEvaluer() throws LpSolveException {
         Arrays.fill(xOptimal, 1);
@@ -58,9 +58,6 @@ public class EvaluationAPI3 extends AbstractEvaluationAPI {
             solver.lpSolver.delConstraint(2);
             cpt++;
         }
-        for (int i = 1; i<=n; i++) {
-            solver.lpSolver.setLowbo(i, 0);
-        }
         System.out.println("Initialisation des contraintes OK (" + cpt + " essais)\n");
         // initialise x comme la solution : dans MRU et à distance C
         x = solver.lpSolver.getPtrVariables();
@@ -93,30 +90,29 @@ public class EvaluationAPI3 extends AbstractEvaluationAPI {
         LpSolve altSolver = solver.lpSolver.copyLp(); // solveur ayant pour contraintes le MRU
         solver.emptyBounds(altSolver);
         double[] cout = new double[n];
-        double binf;
-        double bsup;
+        double bornInf;
+        double bornSup;
         double c;
         altSolver.setObjFn(new double[n+1]);
 
         for (int i=1; i<=n; i++){
             // System.out.println(":::::génération coût, variable n°" + i);
-            altSolver.setMat(0, i, 1); // objectif xi
+            altSolver.setMat(0, i, 1); // l'objectif est sur xi
             if (i>1){
-                altSolver.setMat(0, i-1, 0);
-                altSolver.setBounds(i-1, cout[i-2], cout[i-2]);
+                altSolver.setMat(0, i-1, 0); // mais pas sur les autres composantes
+                altSolver.setBounds(i-1, cout[i-2], cout[i-2]); // avec une condition sur les composantes déjà calculées
             }
-            altSolver.setMinim(); // objectif min
+            altSolver.setMinim(); // objectif min xi
             altSolver.solve();
-            binf = altSolver.getPtrVariables()[i-1];
-            altSolver.setMaxim(); // objectif max
+            bornInf = altSolver.getPtrVariables()[i-1];
+            altSolver.setMaxim(); // objectif max xi
             altSolver.solve();
-            bsup = altSolver.getPtrVariables()[i-1];
-            // altSolver.printLp();
+            bornSup = altSolver.getPtrVariables()[i-1];
             if (rand) {
                 Random r = new Random(); c = r.nextDouble();
             } else {
                 c = 0.5; }
-            cout[i-1]=binf+c*(bsup-binf);
+            cout[i-1]=bornInf+c*(bornSup-bornInf); // xi au hasard ou médian entre ces deux bornes
         }
 
         if (rand){

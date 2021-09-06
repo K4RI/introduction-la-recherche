@@ -6,13 +6,13 @@ import java.io.IOException;
 
 public class MainAPI {
 
-    public static void main(String[] args) throws IOException, LpSolveException {
+    public static void main(String[] args) throws Exception {
 
         // On lance la partie évaluation
         // Ici 2 règles et 5 itérations
         if(args.length <= 1) {
-            AbstractEvaluationAPI e = new EvaluationAPI3(4, 3.0, false);
-            e.evaluer(25);
+            AbstractEvaluationAPI e = new EvaluationAPI5(4, 5.0, false, 50);
+            e.evaluer(40);
         } else {
 
             // récupération du fichier lp
