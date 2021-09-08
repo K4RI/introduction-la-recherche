@@ -3,6 +3,7 @@ package evaluationAPI;
 import lpsolve.LpSolve;
 import lpsolve.LpSolveException;
 import solverAPI.LpsolveAPI;
+import sun.awt.SunToolkit;
 
 import java.io.FileWriter;
 import java.io.IOException;
@@ -17,7 +18,7 @@ import java.util.Random;
  */
 public class EvaluationAPI3 extends AbstractEvaluationAPI {
 
-    private final int nMax; // nombre maximal des coefficients entiers (càd des applications des règles de transformation)
+    protected final int nMax; // nombre maximal des coefficients entiers (càd des applications des règles de transformation)
 
     public EvaluationAPI3(int n, double C, boolean verb, int nMax) throws IOException, LpSolveException {
         super(n, C, verb);
@@ -37,7 +38,7 @@ public class EvaluationAPI3 extends AbstractEvaluationAPI {
         Random r = new Random();
 
         for (int i = 1; i<=n; i++) { // initialiser xOptimal
-            xOptimal[i-1]=r.nextDouble();
+            xOptimal[i-1]=1;
             solver.lpSolver.setLowbo(i, xOptimal[i-1]);
         }
         System.out.println("xOptimal initialisé à " + Arrays.toString(xOptimal));
@@ -91,18 +92,17 @@ public class EvaluationAPI3 extends AbstractEvaluationAPI {
             solver.lpSolver.delConstraint(n+2);
 
             LpSolve altSolver = solver.lpSolver.copyLp();
-            solver.emptyBounds(altSolver);
-            double[] corner = new double[n+1];
-            for(int i=0; i<=n-1; i++){ // CONDITION 2 : aucun coin de l'hypercube n'est dans MRU
-                corner[i]=1;
-                if (altSolver.isFeasible(corner, 0)){solvecode=2; break;}
-                corner[i]=0;
+            for (int i = 1; i <= n; i++) { altSolver.setBounds(i, 0, 0); }
+            for(int i=1; i<=n; i++){ // CONDITION 2 : aucun coin de l'hypercube n'est dans MRU
+                altSolver.setBounds(i, 1, 1);
+                if (altSolver.solve() == 0){solvecode=2;break;}
+                altSolver.setBounds(i, 0, 0);
             }
             cpt++;
-
         }
         System.out.println("Initialisation des contraintes OK (" + cpt + " essais)\n");
         System.out.println("x initialisé à " + Arrays.toString(x));
+        x0 = x;
         // le MRU est un cône polyhédral borné
     }
 
@@ -127,6 +127,27 @@ public class EvaluationAPI3 extends AbstractEvaluationAPI {
 
         return c;
     }
+
+
+    /**
+     * identique à la méthode de la classe abstraite, mais lance une exception après trop de boucles
+     */
+    public void addContrainte() throws LpSolveException {
+        boolean b = true;
+        double[] c = new double[n + 2];
+        int cpt = 0;
+        while (b) {
+            c = randomContrainte();
+            b = (checkConstr(c, x) || !(checkConstr(c, xOptimal)));
+            cpt++;
+            if (cpt>1e7){
+                throw new SunToolkit.InfiniteLoop();
+            }
+        }
+        solver.lpSolver.addConstraint(c, LpSolve.LE, c[n + 1]);
+        System.out.println("Contrainte n°" + solver.lpSolver.getNrows() + " générée en " + cpt + " essais : " + strContrainte(c));
+    }
+
 
     /**
      * @param rand si oui coût random, si non pseudo-centroïde

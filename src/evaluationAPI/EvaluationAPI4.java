@@ -3,6 +3,7 @@ package evaluationAPI;
 import lpsolve.LpSolve;
 import lpsolve.LpSolveException;
 import solverAPI.LpsolveAPI;
+import sun.awt.SunToolkit;
 
 import java.io.FileWriter;
 import java.io.IOException;
@@ -17,7 +18,7 @@ import java.util.Random;
  */
 public class EvaluationAPI4 extends AbstractEvaluationAPI {
 
-    private final int nMax;
+    protected final int nMax;
 
     public EvaluationAPI4(int n, double C, boolean verb, int nMax) throws IOException, LpSolveException {
         super(n, C, verb);
@@ -87,6 +88,7 @@ public class EvaluationAPI4 extends AbstractEvaluationAPI {
         }
         System.out.println("Initialisation des contraintes OK (" + cpt + " essais)\n");
         System.out.println("x initialisé à " + Arrays.toString(x));
+        x0 = x;
         // le MRU est un cône polyhédral borné
     }
 
@@ -111,6 +113,27 @@ public class EvaluationAPI4 extends AbstractEvaluationAPI {
 
         return c;
     }
+
+    /**
+     * identique à la méthode de la classe abstraite, mais lance une exception après trop de boucles
+     */
+    public void addContrainte() throws LpSolveException {
+        boolean b = true;
+        double[] c = new double[n + 2];
+        int cpt = 0;
+        while (b) {
+            c = randomContrainte();
+            b = (checkConstr(c, x) || !(checkConstr(c, xOptimal)));
+            cpt++;
+            if (cpt>5e5){
+                throw new SunToolkit.InfiniteLoop();
+            }
+        }
+        solver.lpSolver.addConstraint(c, LpSolve.LE, c[n + 1]);
+        System.out.println("Contrainte n°" + solver.lpSolver.getNrows() + " générée en " + cpt + " essais : " + strContrainte(c));
+    }
+
+
 
     /**
      * @param rand si oui coût random, si non pseudo-centroïde

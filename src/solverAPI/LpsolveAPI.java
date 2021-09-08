@@ -36,8 +36,14 @@ public class LpsolveAPI extends AbstractSolverAPI {
 
         lpSolver.writeLp(getSolverFile());
 
+        // ne pas considérer des cas 2.1 comme des cas 1
         lpSolver.setEpsd(1e-64); // tolérance pour les coûts réduits, 1e-9
         lpSolver.setEpspivot(1e-64); // tolérance pour la nullité du pivot, 2e-7
+
+        // ne pas renvoyer une fonction réestimée nulle
+        lpSolver.setEpsb(1e-64); // tolérance pour le RHS, 1e-10
+
+        //lpSolver.setEpsel(1e-64);        lpSolver.setEpsint(1e-64);        lpSolver.setEpsperturb(1e-64);
     }
 
     /**
@@ -91,9 +97,7 @@ public class LpsolveAPI extends AbstractSolverAPI {
 
         switch (newStatut) {
             case 0:
-                if(verbose){
-                    System.out.println("MRU cohérent (cas 2.1)");
-                }
+                System.out.println("MRU cohérent (cas 2.1)");
                 if (!Objects.equals(statut, "inf_incoh")) {
                     statut="inf_coh";
                 }
@@ -157,12 +161,17 @@ public class LpsolveAPI extends AbstractSolverAPI {
         }
         lpSolverTer.setObjFn(fctObj);
         lpSolverTer.solve();
+        nouvelleFctCout = Arrays.copyOfRange(lpSolverTer.getPtrVariables(), 0, getNbVariables());
         if (verbose){
             lpSolverTer.printLp();
         }
+        if (isNull(nouvelleFctCout)){
+            lpSolverTer.printLp();
+            System.out.println("x nul, refaire la méthode ?\n");
+            //findShortestDistance();
+        }
         lpSolverTer.writeLp(getCohSolverFile());
 
-        nouvelleFctCout = Arrays.copyOfRange(lpSolverTer.getPtrVariables(), 0, getNbVariables());
         double dist=distanceManhattan();
         System.out.println("Coût d'optimisation linéaire généré");
 

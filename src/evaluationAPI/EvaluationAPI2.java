@@ -78,7 +78,7 @@ public class EvaluationAPI2 extends AbstractEvaluationAPI {
             sum+=c[i]*xOptimal[i-1];
         }
         // ...plus le terme rhs à la fin
-        c[n+1]=r.nextDouble()+sum;
+        c[n+1]=r.nextDouble()*distanceManhattan(x) + sum;
         return c;
     }
 

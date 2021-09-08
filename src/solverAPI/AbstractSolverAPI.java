@@ -125,4 +125,16 @@ public abstract class AbstractSolverAPI {
             s.setBounds(i, 0, s.getInfinite());
         }
     }
+
+    /**
+     * @return vrai si un tableau est rempli de zéros, faux sinon
+     */
+    public boolean isNull(double[] a) {
+        for (double b : a) {
+            if (b != 0) {
+                return false;
+            }
+        }
+        return true;
+    }
 }

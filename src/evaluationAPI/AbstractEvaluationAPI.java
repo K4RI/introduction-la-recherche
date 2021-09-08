@@ -2,7 +2,7 @@ package evaluationAPI;
 
 import lpsolve.LpSolve;
 import lpsolve.LpSolveException;
-import solverAPI.*;
+import solverAPI.AbstractSolverAPI;
 import sun.awt.SunToolkit;
 
 import java.util.Arrays;
@@ -12,14 +12,15 @@ public abstract class AbstractEvaluationAPI {
     protected final double C;
     protected final boolean verb;
     protected final double[] xOptimal;
+    protected double[] x0;
     protected double[] x;
     protected double[] y;
     protected double[] z;
     protected double[] dx;
     protected double[] dy;
     protected double[] dz;
-    public double Py;
-    public double Pz;
+    protected double Py;
+    protected double Pz;
     protected AbstractSolverAPI solver;
     protected String evalFile = "src/evaluationAPI/evalAPI.lp";
 
@@ -85,6 +86,8 @@ public abstract class AbstractEvaluationAPI {
             x = solver.getNouvelleFctCout();
             if(xprec==x){
                 System.err.println("^^^^IDENTIQUE^^^^");
+                nbIter=i;
+                break;
             }
             y = getRandomOrCentroid(true);
             z = getRandomOrCentroid(false);
@@ -101,14 +104,16 @@ public abstract class AbstractEvaluationAPI {
             System.out.println("x = " + Arrays.toString(x));
             System.out.println("y = " + Arrays.toString(y));
             System.out.println("z = " + Arrays.toString(z));
-            if (isNull(x)) {
-                throw new Exception("\n\nx est nul, suite du protocole impossible");
-            }
-            if (dx[i-1]<1e-15 || dy[i-1]<1e-15 || dz[i-1]<1e-15 || Arrays.equals(xprec, x)) {
-                System.err.println("\n\nLes distances des coûts à xOptimal stagnent, continuation du protocole inutile");
+            if (solver.isNull(x)) {
+                System.err.println("\n\nErreur: x est nul, suite du protocole impossible");
                 nbIter=i;
                 break;
             }
+            /*if (dx[i-1]<1e-15 || dy[i-1]<1e-15 || dz[i-1]<1e-15 || Arrays.equals(xprec, x)) {
+                System.err.println("\n\nLes distances des coûts à xOptimal stagnent, continuation du protocole inutile");
+                nbIter=i;
+                break;
+            }*/
         }
         conclEvaluer(cpt_xy, cpt_xz, nbIter);
         return nbIter;
@@ -142,9 +147,6 @@ public abstract class AbstractEvaluationAPI {
             c = randomContrainte();
             b = (checkConstr(c, x) || !(checkConstr(c, xOptimal)));
             cpt++;
-            /*if (cpt>1e6){
-                throw new SunToolkit.InfiniteLoop();
-            }*/
         }
         solver.lpSolver.addConstraint(c, LpSolve.LE, c[n + 1]);
         System.out.println("Contrainte n°" + solver.lpSolver.getNrows() + " générée en " + cpt + " essais : " + strContrainte(c));
@@ -202,18 +204,6 @@ public abstract class AbstractEvaluationAPI {
     /**
      * @return vrai si un tableau est rempli de zéros, faux sinon
      */
-    private boolean isNull(double[] a) {
-        for (double b : a) {
-            if (b != 0) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    /**
-     * @return vrai si un tableau est rempli de zéros, faux sinon
-     */
     public boolean checkConstr(double[] c, double[] arr) {
         double sum = 0;
         for (int i = 0; i < n; i++) {
@@ -221,4 +211,12 @@ public abstract class AbstractEvaluationAPI {
         }
         return (sum <= c[n + 1]);
     }
+
+    public double[] getx0(){ return x0; }
+    public double[] getx(){ return x; }
+    public double[] gety(){ return y; }
+    public double[] getz(){ return z; }
+    public double getPy(){ return Py; }
+    public double getPz(){ return Pz; }
+
 }
