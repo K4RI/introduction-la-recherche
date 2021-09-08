@@ -42,7 +42,7 @@ public abstract class AbstractSolverAPI {
         this.cohSolverFile = "output"+File.separatorChar+"coh_solverAPI";
         this.incohSolverFile1 = "output"+File.separatorChar+"incoh_solver1API";
         this.incohSolverFile2 = "output"+File.separatorChar+"incoh_solver2API";
-        epsilon = 0.001;
+        epsilon = 1e-18;
         File outputRes = new File("output");
         boolean mk = outputRes.mkdir();
     }
@@ -55,7 +55,7 @@ public abstract class AbstractSolverAPI {
         solvecode = lpSolver.solve();
     }
 
-    public abstract void parseOutput() throws LpSolveException;
+    public abstract void parseOutput() throws Exception;
 
     public abstract void createSolverFile() throws IOException, LpSolveException;
 
@@ -100,7 +100,7 @@ public abstract class AbstractSolverAPI {
     }
 
     public void printNewCout(){
-        StringBuilder xStr = new StringBuilder("Valeur initiale de x : [");
+        StringBuilder xStr = new StringBuilder("Nouvelle valeur de x : [");
         for (int i = 1; i <= getNbVariables(); i++) {
             xStr.append(nouvelleFctCout[i-1]).append(", ");
         }
@@ -109,7 +109,7 @@ public abstract class AbstractSolverAPI {
     }
 
     public void printVariables() throws LpSolveException {
-        StringBuilder xStr = new StringBuilder("Nouvelle valeur de x : [");
+        StringBuilder xStr = new StringBuilder("Valeur initiale de x : [");
         for (int i = 1; i <= getNbVariables(); i++) {
             xStr.append(lpSolver.getLowbo(i)).append(", ");
         }

@@ -18,6 +18,8 @@ public abstract class AbstractEvaluationAPI {
     protected double[] dx;
     protected double[] dy;
     protected double[] dz;
+    public double Py;
+    public double Pz;
     protected AbstractSolverAPI solver;
     protected String evalFile = "src/evaluationAPI/evalAPI.lp";
 
@@ -41,10 +43,11 @@ public abstract class AbstractEvaluationAPI {
      *
      * @param nbIter nombre d'itérations sur lesquelles vont être effectuées l'évaluation
      */
-    public void evaluer(int nbIter) throws Exception {
+    public int evaluer(int nbIter) throws Exception {
         dx = new double[nbIter];
         dy = new double[nbIter];
         dz = new double[nbIter];
+        double[] xprec;
 
         initEvaluer(); // varie selon les variantes du protocole
 
@@ -62,14 +65,27 @@ public abstract class AbstractEvaluationAPI {
                 addContrainte();
             }
             catch(Exception e){
-                conclEvaluer(cpt_xy, cpt_xz, i);
-                throw new Exception("Génération de nouvelle contrainte impossible");
+                e.printStackTrace();
+                System.err.println("\n\nErreur: Génération de nouvelle contrainte impossible");
+                nbIter=i;
+                break;
             }
             // reprint tout MRU à chaque fois ?
             solver.run();
-            solver.parseOutput(); // nécessairement cas 2.1
-            x = solver.getNouvelleFctCout();
+            try{
+                solver.parseOutput(); // nécessairement cas 2.1
+            } catch(Exception e){
+                e.printStackTrace();
+                System.err.println("\n\nErreur: optimisation de x");
+                nbIter=i;
+                break;
+            }
 
+            xprec = x;
+            x = solver.getNouvelleFctCout();
+            if(xprec==x){
+                System.err.println("^^^^IDENTIQUE^^^^");
+            }
             y = getRandomOrCentroid(true);
             z = getRandomOrCentroid(false);
 
@@ -86,16 +102,16 @@ public abstract class AbstractEvaluationAPI {
             System.out.println("y = " + Arrays.toString(y));
             System.out.println("z = " + Arrays.toString(z));
             if (isNull(x)) {
-                conclEvaluer(cpt_xy, cpt_xz, i);
-                throw new NullPointerException("\n\nx est nul, suite du protocole impossible");
+                throw new Exception("\n\nx est nul, suite du protocole impossible");
             }
-            if (dx[i-1]<1e-15) {
-                conclEvaluer(cpt_xy, cpt_xz, i);
-                throw new NullPointerException("\n\nLes distances des coûts à xOptimal stagnent, continuation du protocole inutile");
+            if (dx[i-1]<1e-15 || dy[i-1]<1e-15 || dz[i-1]<1e-15 || Arrays.equals(xprec, x)) {
+                System.err.println("\n\nLes distances des coûts à xOptimal stagnent, continuation du protocole inutile");
+                nbIter=i;
+                break;
             }
-
         }
         conclEvaluer(cpt_xy, cpt_xz, nbIter);
+        return nbIter;
     }
 
     /**
@@ -108,8 +124,11 @@ public abstract class AbstractEvaluationAPI {
         System.out.println("Distances z : " + Arrays.toString(dz));
 
         // afficher les fréquences de dx[i]<dy[i] et de dx[i]<dz[i]
-        System.out.println("\nFréquences dx<dy : " + cpt_xy + "/" + nbIter + " (" + 100 * cpt_xy / nbIter + "%)");
-        System.out.println("Fréquences dx<dz : " + cpt_xz + "/" + nbIter + " (" + 100 * cpt_xz / nbIter + "%)");
+        Py = Math.round((double) 100 * cpt_xy / nbIter) / 100.;
+        Pz = Math.round((double) 100 * cpt_xz / nbIter) / 100.;
+
+        System.out.println("\nFréquences dx<dy : " + cpt_xy + "/" + nbIter + " (" + 100 * Py + "%)");
+        System.out.println("Fréquences dx<dz : " + cpt_xz + "/" + nbIter + " (" + 100 * Pz + "%)");
     }
 
     /**
@@ -123,9 +142,9 @@ public abstract class AbstractEvaluationAPI {
             c = randomContrainte();
             b = (checkConstr(c, x) || !(checkConstr(c, xOptimal)));
             cpt++;
-            if (cpt>1e6){
+            /*if (cpt>1e6){
                 throw new SunToolkit.InfiniteLoop();
-            }
+            }*/
         }
         solver.lpSolver.addConstraint(c, LpSolve.LE, c[n + 1]);
         System.out.println("Contrainte n°" + solver.lpSolver.getNrows() + " générée en " + cpt + " essais : " + strContrainte(c));

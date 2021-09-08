@@ -5,6 +5,7 @@ import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import evaluationAPI.*;
 import lpsolve.*;
 
 public class LpsolveAPI extends AbstractSolverAPI {
@@ -34,36 +35,44 @@ public class LpsolveAPI extends AbstractSolverAPI {
         }
 
         lpSolver.writeLp(getSolverFile());
+
+        lpSolver.setEpsd(1e-64); // tolérance pour les coûts réduits, 1e-9
+        lpSolver.setEpspivot(1e-64); // tolérance pour la nullité du pivot, 2e-7
     }
 
     /**
      * Méthode permettant de distnguer les cas 1 et 2
      */
-    public void parseOutput() throws LpSolveException {
+    public void parseOutput() throws Exception {
         valOptimal = lpSolver.getObjective();
 
-        if (solvecode==0){
-            if (verbose){
-                lpSolver.printLp();
-                System.out.println("\nLa solution est dans MRU (cas 1)");
-            }
-            if (!Objects.equals(statut, "inf_incoh")) {
-                statut="right";
-            }
-
-        } else if(solvecode==2){
-            if(verbose){
-                System.out.println("\nLe problème est infaisable (cas 2)");
-            }
-            retryLpFile();
-        } else if (solvecode==3) {
-            if (verbose){
-                System.out.println("\nLe problème n'est pas borné");
-            }
-            statut="unbounded";
-        } else {
-            System.out.println("Code inconnu : " + solvecode);
-            statut=Integer.toString(solvecode);
+        switch (solvecode) {
+            case 0:
+                if (verbose){
+                    lpSolver.printLp();
+                }
+                    System.out.println("\nLa solution est dans MRU (cas 1)");
+                if (!Objects.equals(statut, "inf_incoh")) {
+                    statut="right";
+                }
+                break;
+            case 2:
+                    System.out.println("\nLe problème est infaisable (cas 2)");
+                retryLpFile();
+                break;
+            case 3:
+                System.out.println("\n1-2 Le problème n'est pas borné");
+                statut="unbounded";
+                break;
+            case 25:
+                System.out.println("\n1-2 Le problème a une erreur de précision");
+                statut="unaccuracy";
+                //throw new Exception();
+                break;
+            default:
+                System.out.println("\n1-2 Code inconnu : " + solvecode);
+                statut=Integer.toString(solvecode);
+                throw new Exception();
         }
 
         // fin de l'exécution
@@ -73,31 +82,41 @@ public class LpsolveAPI extends AbstractSolverAPI {
     /**
      * Méthode qui détermine si le problème d'infaisabilité vient de la fonction de coût ou de la cohérence de MRU
      */
-    public void retryLpFile() throws LpSolveException {
+    public void retryLpFile() throws Exception {
         lpSolverBis= lpSolver.copyLp();
         lpSolverBis.setLpName("Problème 2");
         // on retire la fonction de coût, pour ne garder que les contraintes et vérifier leur cohérence
         emptyBounds(lpSolverBis);
         int newStatut = lpSolverBis.solve();
 
-        if(newStatut==0){
-            if(verbose){
-                System.out.println("MRU cohérent (cas 2.1)");
-            }
-            if (!Objects.equals(statut, "inf_incoh")) {
-                statut="inf_coh";
-            }
-            findShortestDistance();
-        } else if (newStatut==2) {
-            System.out.println("MRU incohérent (cas 2.2)");
-            statut="inf_incoh";
-            fixMRU();
-        } else if (newStatut==3){
-            System.out.println("Le problème n'est pas borné");
-            statut="unbounded";
-        } else {
-            System.out.println("Code inconnu : " + solvecode);
-            statut=Integer.toString(solvecode);
+        switch (newStatut) {
+            case 0:
+                if(verbose){
+                    System.out.println("MRU cohérent (cas 2.1)");
+                }
+                if (!Objects.equals(statut, "inf_incoh")) {
+                    statut="inf_coh";
+                }
+                findShortestDistance();
+                break;
+            case 2:
+                System.out.println("MRU incohérent (cas 2.2)");
+                statut="inf_incoh";
+                fixMRU();
+                break;
+            case 3:
+                System.out.println("\nLe problème n'est pas borné");
+                statut="unbounded";
+                break;
+            case 25:
+                System.out.println("\n2.1-2.2 Le problème a une erreur de précision");
+                statut="unbounded";
+                //throw new Exception();
+                break;
+            default:
+                System.out.println("\n2.1-2.2 Code inconnu : " + solvecode);
+                statut=Integer.toString(solvecode);
+                throw new Exception();
         }
     }
 
@@ -158,7 +177,7 @@ public class LpsolveAPI extends AbstractSolverAPI {
     /**
      * Méthode permettant de rendre cohérent un système de contraintes MRU incohérent (cas 2.2)
      */
-    private void fixMRU() throws LpSolveException {
+    private void fixMRU() throws Exception {
         LpSolve newMRU = lpSolver.copyLp();
         newMRU.setLpName("Problème 2.2 INITIAL");
         emptyBounds(newMRU);

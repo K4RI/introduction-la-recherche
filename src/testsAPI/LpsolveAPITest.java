@@ -47,7 +47,7 @@ class LpsolveAPITest {
     }
 
     @Test
-    void testRightFunction() throws IOException, LpSolveException {
+    void testRightFunction() throws Exception {
         solver1.createSolverFile();
         solver1.run();
         solver1.parseOutput();
@@ -56,7 +56,7 @@ class LpsolveAPITest {
     }
 
     @Test
-    void testWrongFunction() throws IOException, LpSolveException {
+    void testWrongFunction() throws Exception {
         solver2.createSolverFile();
         solver2.run();
         solver2.parseOutput();
@@ -67,7 +67,7 @@ class LpsolveAPITest {
     }
 
     @Test
-    void testWrongMRU() throws IOException, LpSolveException {
+    void testWrongMRU() throws Exception {
         solver3.createSolverFile();
         Assertions.assertEquals(solver3.getNbContraintes(), 5);
         solver3.run();
@@ -80,7 +80,7 @@ class LpsolveAPITest {
     }
 
     @Test
-    void testParseOutputWrongExtension() throws IOException, LpSolveException {
+    void testParseOutputWrongExtension() throws Exception {
         solver4.createSolverFile();
         solver4.run();
         solver4.parseOutput();

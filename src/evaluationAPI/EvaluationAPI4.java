@@ -10,14 +10,14 @@ import java.util.Arrays;
 import java.util.Random;
 
 /**
- * le 2ème plus proche de la vraie étude
- * init : 1 seule contrainte à coeffs positifs pour bornesup la distance, xOptimal =/= 0
- * à chaque iter : coeffs entiers relatifs, RHS nul
- * MRU est un cône convexe polyhédral
+ * le plus proche de la vraie étude, identique à EvaluationAPI4 mais normalisé
+ * init : restreindre TOUS les coûts dans S(0,1) = "x1+...+xn=1"
+ * à chaque iter : coeffs entiers relatifs non-tous positifs, RHS nul
+ * MRU est l'intersection d'un cône et de la sphère unité, càd une surface ""incurvée"" de dimension n-1
  */
 public class EvaluationAPI4 extends AbstractEvaluationAPI {
 
-    private final int nMax; // nombre maximal des coefficients entiers (càd des applications des règles de transformation)
+    private final int nMax;
 
     public EvaluationAPI4(int n, double C, boolean verb, int nMax) throws IOException, LpSolveException {
         super(n, C, verb);
@@ -31,47 +31,37 @@ public class EvaluationAPI4 extends AbstractEvaluationAPI {
     }
 
     /**
-     * 1 contrainte pour borner MRU, xOptimal aléatoire dans l'hypercube unité, et x sur S(xOptimal,C)
+     * 1 contrainte pour borner MRU, n contraintes pour le cône polyhédral, et x initialisé dans l'intersection cône-sphère
      */
     public void initEvaluer() throws LpSolveException {
         Random r = new Random();
 
         for (int i = 1; i<=n; i++) { // initialiser xOptimal
-            xOptimal[i-1]=r.nextDouble();
-            solver.lpSolver.setLowbo(i, xOptimal[i-1]);
+            xOptimal[i-1]=1./n;
         }
         System.out.println("xOptimal initialisé à " + Arrays.toString(xOptimal));
 
-        // créer n contraintes d'entiers relatifs telles que chacune ait un coef >0 et un coef <0, MRU borné, et x \in MRU
+        double[] c = new double[n+2]; // contrainte x1+...+xn=1 pour borner x sur la sphère
+        Arrays.fill(c, 1);
+        solver.lpSolver.addConstraint(c, LpSolve.EQ, c[n+1]);
+        if (verb){
+            System.out.println("Contrainte n°1 générée : " + strContrainte(c));
+        }
 
         int solvecode = 2;
         int cpt = 0;
 
         while (solvecode!=0){
             if (cpt>0){
-                for (int i = n+1; i >= 1; i--){
+                for (int i = n+1; i >= 2; i--){
                     solver.lpSolver.delConstraint(i);
                 }
             }
-
-            double[] c = new double[n+2]; // contrainte à coeffs tous positifs pour borner MRU
             boolean check=false;
-            while (!check){
-                for (int i=1; i<=n+1; i++){
-                    c[i] = r.nextDouble();
-                }
-                check=checkConstr(c, xOptimal); // CONDITION 0 : xOptimal est dans MRU
-            }
-            solver.lpSolver.addConstraint(c, LpSolve.LE, c[n+1]);
-            if (verb){
-                System.out.println("Contrainte n°1 générée : " + strContrainte(c));
-            }
-            check=false;
-
             for(int i=1; i<=n; i++){
                 while(!check){
                     c = randomContrainte();
-                    check=checkConstr(c, xOptimal); // CONDITION 0
+                    check=checkConstr(c, xOptimal); // CONDITION xOptimal \in MRU
                 }
                 solver.lpSolver.addConstraint(c, LpSolve.LE, 0);
                 if (verb){
@@ -80,22 +70,16 @@ public class EvaluationAPI4 extends AbstractEvaluationAPI {
                 check=false;
             }
 
-            Arrays.fill(c, 1);
-            double sum = 0; for (int i=0;i<n;i++){sum+=xOptimal[i];}
-            solver.lpSolver.addConstraint(c, LpSolve.EQ, C+sum); // x sur la sphère S(xOptimal, C)
-            // (x1+...+xn=C+n <-> (x1-1)+...+(xn-1)=C & xi>1) ---> somme des xi-1 = C
-
-            solvecode = solver.lpSolver.solve(); // CONDITION 1 : MRU ^ S(xOptimal, C) est non-vide
-            // initialise x comme la solution : dans MRU et à distance C
+            solvecode = solver.lpSolver.solve();
+            // initialise x dans MRU : sur l'hypersphère et dans les contraintes (cône)
             x = solver.lpSolver.getPtrVariables();
-            solver.lpSolver.delConstraint(n+2);
 
             LpSolve altSolver = solver.lpSolver.copyLp();
             solver.emptyBounds(altSolver);
-            double[] corner = new double[n+1];
+            double[] corner = new double[n];
             for(int i=0; i<=n-1; i++){ // CONDITION 2 : aucun coin de l'hypercube n'est dans MRU
                 corner[i]=1;
-                if (altSolver.isFeasible(corner, 0)){solvecode=2; break;}
+                if (altSolver.isFeasible(corner, 0)){solvecode=2;break;}
                 corner[i]=0;
             }
             cpt++;

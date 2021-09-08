@@ -10,9 +10,9 @@ import java.util.Arrays;
 import java.util.Random;
 
 
-public class EvaluationAPI2 extends AbstractEvaluationAPI {
+public class EvaluationAPI extends AbstractEvaluationAPI {
 
-    public EvaluationAPI2(int n, double C, boolean verb) throws IOException, LpSolveException {
+    public EvaluationAPI(int n, double C, boolean verb) throws IOException, LpSolveException {
         super(n, C, verb);
 
         FileWriter myWriter = new FileWriter(this.evalFile, false);
@@ -23,16 +23,12 @@ public class EvaluationAPI2 extends AbstractEvaluationAPI {
     }
 
     /**
-     * 1 contrainte pour borner MRU, xOptimal=(1, ..., 1), et x sur S(xOptimal,C)
+     * Initialise 1 contrainte pour borner MRU, xOptimal=0, et x sur S(0,C)
      */
     public void initEvaluer() throws LpSolveException {
-        Arrays.fill(xOptimal, 1);
         int solvecode = 2;
         int cpt = 0;
 
-        for (int i = 1; i<=n; i++) {
-            solver.lpSolver.setLowbo(i, xOptimal[i-1]);
-        }
         while (solvecode!=0){
             if (cpt>0){
                 solver.lpSolver.delConstraint(1);
@@ -50,11 +46,9 @@ public class EvaluationAPI2 extends AbstractEvaluationAPI {
 
             double[] lastConstr = new double[n+1];
             Arrays.fill(lastConstr, 1);
-            double sum = 0; for (int i=0;i<n;i++){sum+=xOptimal[i];}
-            solver.lpSolver.addConstraint(lastConstr, LpSolve.EQ, C+sum);
-            // (x1+...+xn=C+n <-> (x1-1)+...+(xn-1)=C & xi>1) ---> somme des xi-1 = C
-
+            solver.lpSolver.addConstraint(lastConstr, LpSolve.EQ, C);
             solvecode = solver.lpSolver.solve();
+            // enlève la dernière contrainte x1+...+xn=C
             solver.lpSolver.delConstraint(2);
             cpt++;
         }
@@ -68,17 +62,14 @@ public class EvaluationAPI2 extends AbstractEvaluationAPI {
      * @return une contrainte aléatoire de coefficients entre -1 et 1 et de RHS entre 0 et 1
      */
     public double[] randomContrainte() {
-        // a1(x1-xOptimal1) + ... + an(xn-xOptimaln)<=b
-        // <----> a1x1+...+anxn <= b + somme des ai*xOptimali
         Random r = new Random();
         double[] c = new double[n+2];
-        double sum=0;
+        // les n coeffs...
         for (int i=1; i<=n; i++){
             c[i] = 2*r.nextDouble() - 1;
-            sum+=c[i]*xOptimal[i-1];
         }
         // ...plus le terme rhs à la fin
-        c[n+1]=r.nextDouble()+sum;
+        c[n+1]=r.nextDouble()*distanceManhattan(x);
         return c;
     }
 
@@ -90,29 +81,30 @@ public class EvaluationAPI2 extends AbstractEvaluationAPI {
         LpSolve altSolver = solver.lpSolver.copyLp(); // solveur ayant pour contraintes le MRU
         solver.emptyBounds(altSolver);
         double[] cout = new double[n];
-        double bornInf;
-        double bornSup;
+        double binf;
+        double bsup;
         double c;
         altSolver.setObjFn(new double[n+1]);
 
         for (int i=1; i<=n; i++){
             // System.out.println(":::::génération coût, variable n°" + i);
-            altSolver.setMat(0, i, 1); // l'objectif est sur xi
+            altSolver.setMat(0, i, 1); // objectif xi
             if (i>1){
-                altSolver.setMat(0, i-1, 0); // mais pas sur les autres composantes
-                altSolver.setBounds(i-1, cout[i-2], cout[i-2]); // avec une condition sur les composantes déjà calculées
+                altSolver.setMat(0, i-1, 0);
+                altSolver.setBounds(i-1, cout[i-2], cout[i-2]);
             }
-            altSolver.setMinim(); // objectif min xi
+            altSolver.setMinim(); // objectif min
             altSolver.solve();
-            bornInf = altSolver.getPtrVariables()[i-1];
-            altSolver.setMaxim(); // objectif max xi
+            binf = altSolver.getPtrVariables()[i-1];
+            altSolver.setMaxim(); // objectif max
             altSolver.solve();
-            bornSup = altSolver.getPtrVariables()[i-1];
+            bsup = altSolver.getPtrVariables()[i-1];
+            // altSolver.printLp();
             if (rand) {
                 Random r = new Random(); c = r.nextDouble();
             } else {
                 c = 0.5; }
-            cout[i-1]=bornInf+c*(bornSup-bornInf); // xi au hasard ou médian entre ces deux bornes
+            cout[i-1]=binf+c*(bsup-binf);
         }
 
         if (rand){
