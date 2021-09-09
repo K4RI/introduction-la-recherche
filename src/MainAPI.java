@@ -60,9 +60,6 @@ public class MainAPI {
             myWriter.close();
 
         } else if(Objects.equals(args[0], "lp_solve")) { // résolution d'un fichier
-            // "lp_solve ./src/test.lp 3" "eval 1 5.0 3 200 false"
-
-            // les x=0 viennent de "...e+188" qui se glissent dans les matrices de résolution de 2.1
 
             // récupération du fichier lp
             String filePath = args[1];
