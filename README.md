@@ -28,7 +28,7 @@ Liste des différents solveurs compatibles avec l'interface :
 
 ## Exécution
 
-###Ligne de commande pour lire un fichier :
+### Ligne de commande pour lire un fichier :
 
 ```
 java -jar jarName.jar [solver] [file_path] [options]
