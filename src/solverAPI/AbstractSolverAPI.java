@@ -42,7 +42,7 @@ public abstract class AbstractSolverAPI {
         this.cohSolverFile = "output"+File.separatorChar+"coh_solverAPI";
         this.incohSolverFile1 = "output"+File.separatorChar+"incoh_solver1API";
         this.incohSolverFile2 = "output"+File.separatorChar+"incoh_solver2API";
-        epsilon = 1e-18;
+        epsilon = 1e-3;
         File outputRes = new File("output");
         boolean mk = outputRes.mkdir();
     }

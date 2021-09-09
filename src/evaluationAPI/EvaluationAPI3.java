@@ -3,7 +3,6 @@ package evaluationAPI;
 import lpsolve.LpSolve;
 import lpsolve.LpSolveException;
 import solverAPI.LpsolveAPI;
-import sun.awt.SunToolkit;
 
 import java.io.FileWriter;
 import java.io.IOException;
@@ -132,7 +131,7 @@ public class EvaluationAPI3 extends AbstractEvaluationAPI {
     /**
      * identique à la méthode de la classe abstraite, mais lance une exception après trop de boucles
      */
-    public void addContrainte() throws LpSolveException {
+    public void addContrainte() throws Exception {
         boolean b = true;
         double[] c = new double[n + 2];
         int cpt = 0;
@@ -141,7 +140,7 @@ public class EvaluationAPI3 extends AbstractEvaluationAPI {
             b = (checkConstr(c, x) || !(checkConstr(c, xOptimal)));
             cpt++;
             if (cpt>1e7){
-                throw new SunToolkit.InfiniteLoop();
+                throw new Exception("Boucle infinie");
             }
         }
         solver.lpSolver.addConstraint(c, LpSolve.LE, c[n + 1]);

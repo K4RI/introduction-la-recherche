@@ -1,9 +1,10 @@
 # Linear Programming Solver Interface
 
-Ce projet est une interface faisant le lien entre un programme linéaire et un solveur.
-Il a été créé dans le cadre d'un projet visant à réestimer des coûts de transformations de requête. 
-En entrée est fournie une fonction de coût qui attribue une valeur à chaque transformation de requête, ainsi qu'un ensemble d'inégalités. Elles correspondent à des contraintes d'utilisateur(s) sur l'ordre de priorité des types de modifications d'une requête.
-Le but est de trouver une fonction de coût satisfaisant toutes ces contraintes, quitte à réduire l'ensemble d'inégalités, tout en restant proche de celle fournie en entrée. La nouvelle configuration (fonction de coût + inégalité) est alors réécrite dans un fichier dont la syntaxe est similaire à l'entrée.
+Ce projet est une interface faisant le lien entre un programme linéaire et un solveur. Il a été créé dans le cadre d'un projet visant à réestimer des coûts de transformations de requête.  
+
+En entrée est fournie une fonction de coût qui attribue une valeur à chaque transformation de requête, ainsi qu'un multi-ensemble d'inégalités (aussi appelé MRU). Elles correspondent à des contraintes d'utilisateur(s) sur l'ordre de priorité des types de modifications d'une requête.  
+
+Le but est de trouver une fonction de coût satisfaisant toutes ces contraintes, quitte à réduire l'ensemble d'inégalités, tout en restant proche de celle fournie en entrée. La nouvelle configuration (fonction de coût + inégalités) est alors réécrite dans un fichier dont la syntaxe est similaire à l'entrée.  
 
 ### Prérequis
 
@@ -13,7 +14,7 @@ Logiciel(s) nécessaires au fonctionnement du projet :
 Lp Solve
 ```
 
-Version du sdk utilisé :
+Version du SDK utilisé :
 
 ```
 Java 1.8
@@ -27,31 +28,35 @@ Liste des différents solveurs compatibles avec l'interface :
 
 ## Exécution
 
-Ligne de commande pour lancer l'archive jar :
+###Ligne de commande pour lire un fichier :
 
 ```
-java -jar jarName.jar solver file_path verbose
+java -jar jarName.jar [solver] [file_path] [options]
 ```
 
-*[solver] doit être remplacé par un des solveurs de la liste "Solveurs disponibles".*
-*[verbose] est un nombre entier situé entre 0 et 6 inclus*
+- **[solver]** doit être remplacé par un des solveurs de la liste "Solveurs disponibles".  
+- **[file_path]** est le chemin vers le fichier décrivant la configuration    
+- **[options]** décrit la verbose de lp_solve en un nombre entier situé entre 0 et 6 inclus *(0=NEUTRAL, 1=CRITICAL, 2=SEVERE, 3=IMPORTANT, 4=NORMAL, 5=DETAILED, 6=FULL)*
 
-
-Ligne de commande pour lancer l'évaluation :
+### Ligne de commande pour lancer une évaluation :
 
 ```
-java -jar jarName.jar eval typeEval distInit nbreVariables nbreIter verbose
+java -jar jarName.jar eval [typeEval] [distInit] [nbreVariables] [nbreIter] [verbose]
 ```
 
-*[typeEval] doit être remplacé par la variante souhaitée, entre 0 et 4 inclus*
+- **[typeEval]** doit être remplacé par la variante souhaitée, entre 0 et 4 inclus *(0=procédure standard, 1=variables non-bornées, 2=x\* non-nul, 3=coefficients entiers et RHS nul, 4=variante 3 normalisée)*   
+- **[distInit]** est la distance au coût optimal à laquelle x0 est initialisé  
+- **[nbreVariables]** est le nombre de colonnes du problème  
+- **[nbreIter]** est le nombre maximal d'itérations à prévoir
+- **[verbose]** est un booléen "true" ou "false" pour choisir si l'on veut détailler le processus en console  
 
 
 ## Format de fichier
-Le fichier doit être un fichier texte au format pour être utilisé avec lp_solve :
+Le fichier doit être un fichier .lp et respecter cette syntaxe pour être utilisé avec lp_solve :
 ```
-min: x1+[...]+xp // Resp. max, le type d'optimisation à effectuer
+min: x1 +...+ xp // Resp. max, le type d'optimisation à effectuer
 
-ci: xj >= ai; // Resp. <= ai, selon le type de contrainte
+ci: ai1*x1 +...+ aip*xp >= ai; // Resp. <= ai, selon le type de contrainte
 // à répéter pour toutes les contraintes du multi-ensemble
 
 xj = bj;
@@ -60,17 +65,16 @@ xj = bj;
 
 ## Explication des programmes
 
-La classe AbstractSolver permet de regrouper les méthodes communes aux différents solveurs,
-comme la méthode.
-La classe Lpsolve contient les méthodes plus spécifiques au solveur lp_solve. Cette classe
-contient les méthodes permettant de créer un fichier lp avec les informations de base. Elle
-contient aussi les méthodes permettant d'analyser les différents fichiers, de calculer la plus
-courte distance, de rendre cohérent un multi-ensemble de contraintes.
+La classe AbstractSolverAPI et son extension LpsolveAPI regroupent les méthodes de détection de cas *(parseOutput() sur la cohérence de la fonction, retryLpFile() sur la cohérence de MRU)* et leur résolution *(findShortestDistance() réestime un coût, fixMRU() réduit un multi-ensemble incohérent)*.  
+
+LpsolveAPITest regroupe les tests unitaires.  
+
+evaluationAPI contient une classe abstraite et six procédures d'évaluation différentes les unes des autres. Elle compare la méthode de lp_solve avec d'autres.
 
 
 ## Exemple d'exécution
 
-Exemple d'éxécution sur le fichier test.txt avec le serveur lp_solve :
+Exemple d'exécution sur le fichier test.lp avec le serveur lp_solve :
 ```
 min: x1 + x2;
 
@@ -84,23 +88,22 @@ x1 = 5;
 x2 = 2;
 ```
 
-On exécute la commande ``java -jar jarName.jar test.txt 0``, 
+On exécute la commande ``java -jar jarName.jar [solver] ./src/test.lp 0``, 
 ce qui donne en sortie : 
 ```
 min: x1 + x2;
 
-c1: x1 >= 1;
-c2: x1 <= 3;
-c3: x2 >= 1;
-c4: x2 <= 3;
+c3: x1 <= 3;
+c5: x2 <= 3;
 
-x1 = 5;
+x1 = 3;
 x2 = 2;
 ```
 
-On détecte que la fonction de coût donnée dans le fichier test.txt ne satisfait pas les contraintes utilisateur.
-Il est alors calculé une nouvelle fonction de coût, qui correspond à l'ensemble des variables y<sub>i</sub>.
+On détecte que le MRU donné dans le fichier test.lp n'est pas cohérent donc corrigé, puis la fonction de coût est réestimée.
 
 ## Documentation
 
-* [Lp Solve](http://lpsolve.sourceforge.net/5.5/lp_solve.htm) - options pour Lp Solve
+* [LpSolve](http://web.mit.edu/lpsolve_v5520/doc/Java/docs/api/index.html) - routines Java pour LpSolve
+* [LpSolve](http://lpsolve.sourceforge.net/5.5/Java/docs/reference.html) - correspondance avec les routines C
+* [LpSolve](http://lpsolve.sourceforge.net/5.5/lp_solveAPIreference.htm) - description détaillée des routines C

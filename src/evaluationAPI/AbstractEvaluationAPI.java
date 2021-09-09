@@ -3,7 +3,6 @@ package evaluationAPI;
 import lpsolve.LpSolve;
 import lpsolve.LpSolveException;
 import solverAPI.AbstractSolverAPI;
-import sun.awt.SunToolkit;
 
 import java.util.Arrays;
 
@@ -121,6 +120,8 @@ public abstract class AbstractEvaluationAPI {
 
     /**
      * Affiche les résultats de l'évaluation
+     * @param cpt_xy nombre de fois où x était plus proche que y
+     * @param cpt_xz nombre de fois où x était plus proche que z
      */
     private void conclEvaluer(int cpt_xy, int cpt_xz, int nbIter){
 
@@ -139,7 +140,7 @@ public abstract class AbstractEvaluationAPI {
     /**
      * Ajoute une nouvelle contrainte aléatoire à MRU telle que xOptimal est dans MRU mais pas x
      */
-    public void addContrainte() throws LpSolveException {
+    public void addContrainte() throws Exception {
         boolean b = true;
         double[] c = new double[n + 2];
         int cpt = 0;
