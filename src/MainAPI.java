@@ -15,7 +15,6 @@ public class MainAPI {
         String resultFile = "src/evaluationAPI/results.txt";
 
         if(Objects.equals(args[0], "eval")) { // On lance la partie évaluation
-            // "eval 1 5.0 4 25 false"
             int variante = Integer.parseInt(args[1]);
 
             double C = Double.parseDouble(args[2]);
