@@ -88,7 +88,7 @@ x1 = 5;
 x2 = 2;
 ```
 
-On exécute la commande ``java -jar jarName.jar [solver] ./src/test.lp 0``, 
+On exécute la commande ``java -jar jarName.jar lp_solve ./src/test.lp 0``, 
 ce qui donne en sortie : 
 ```
 min: x1 + x2;
