@@ -48,7 +48,7 @@ java -jar jarName.jar eval [typeEval] [distInit] [nbreVariables] [nbreIter] [ver
 
 - **[typeEval]** doit être remplacé par la variante souhaitée, entre 0 et 4 inclus *(0=procédure standard, 1=variables non-bornées, 2=x\* non-nul, 3=coefficients entiers et RHS nul, 4=variante 3 normalisée)*   
 - **[distInit]** est la distance au coût optimal à laquelle x0 est initialisé  
-- **[nbreVariables]** est le nombre de colonnes du problème  
+- **[nbreVariables]** est le nombre de règles  
 - **[nbreIter]** est le nombre maximal d'itérations à prévoir
 - **[verbose]** est un booléen "true" ou "false" pour choisir si l'on veut détailler le processus en console  
 
