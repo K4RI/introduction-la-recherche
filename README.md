@@ -11,7 +11,8 @@ Le but est de trouver une fonction de coût satisfaisant toutes ces contraintes,
 Logiciel(s) nécessaires au fonctionnement du projet :
 
 ```
-Lp Solve
+Lp Solve *(étapes d'installation dans "Notes techniques.doc")*  
+JUnit 5.7.0  
 ```
 
 Version du SDK utilisé :
