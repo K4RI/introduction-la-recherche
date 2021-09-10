@@ -69,7 +69,9 @@ La classe AbstractSolverAPI et son extension LpsolveAPI regroupent les méthodes
 
 LpsolveAPITest regroupe les tests unitaires.  
 
-evaluationAPI contient une classe abstraite et six procédures d'évaluation différentes les unes des autres. Elle compare la méthode de lp_solve avec d'autres.
+EvaluationAPI contient une classe abstraite et six procédures d'évaluation différentes les unes des autres. Elle compare la méthode de lp_solve avec d'autres.  
+
+Les classes ne contenant pas le mot "API" proviennent d'une ancienne version du dépôt, dont les seules modifications depuis ont été les corrections de bugs.  
 
 
 ## Exemple d'exécution
